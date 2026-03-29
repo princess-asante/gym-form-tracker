@@ -69,7 +69,7 @@ export default function ImageDropzone({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         className="sr-only"
         onChange={handleChange}
         disabled={disabled}

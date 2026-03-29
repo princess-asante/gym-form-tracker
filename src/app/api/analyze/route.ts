@@ -1,24 +1,29 @@
-import { anthropic } from '@ai-sdk/anthropic'
-import { Output, streamText } from 'ai'
-import { FormFeedbackSchema } from '@/lib/schemas'
+import { anthropic } from "@ai-sdk/anthropic";
+import { Output, streamText } from "ai";
+import { FormFeedbackSchema } from "@/lib/schemas";
 
-// Tell Next.js this route does real work at request time — never cache it
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const { image } = await request.json()
-  const [header, base64Data] = (image as string).split(',')
-  const mediaType = header.match(/:(.*?);/)?.[1]
+  const { image } = await request.json();
+
+  const [header, base64Data] = (image as string).split(",");
+  const mediaType = header.match(/:(.*?);/)?.[1];
 
   if (!base64Data || !mediaType) {
-    return new Response(JSON.stringify({ error: 'Invalid image format' }), {
+    return new Response(JSON.stringify({ error: "Invalid image format" }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
+  // The SDK treats strings as URLs and tries to fetch them — including data:
+  // URLs, which causes a DownloadError. Passing a Buffer tells the SDK this
+  // is already binary data and bypasses the URL fetching path entirely.
+  const imageBuffer = Buffer.from(base64Data, "base64");
+
   const result = streamText({
-    model: anthropic('claude-sonnet-4-6'),
+    model: anthropic("claude-sonnet-4-6"),
     output: Output.object({ schema: FormFeedbackSchema }),
     system: `You are an expert strength and conditioning coach with deep knowledge
 of biomechanics and injury prevention. Analyse the exercise form shown in the image.
@@ -32,20 +37,20 @@ Rules:
 
     messages: [
       {
-        role: 'user',
+        role: "user",
         content: [
           {
-            type: 'image',
-            image: base64Data,
-            mediaType: mediaType as 'image/jpeg' | 'image/png' | 'image/webp',
+            type: "image",
+            image: imageBuffer,
+            mediaType: mediaType as "image/jpeg" | "image/png" | "image/webp",
           },
           {
-            type: 'text',
-            text: 'Please analyse my exercise form.',
+            type: "text",
+            text: "Please analyse my exercise form.",
           },
         ],
       },
     ],
-  })
-  return result.toTextStreamResponse()
+  });
+  return result.toTextStreamResponse();
 }
