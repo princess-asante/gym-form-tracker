@@ -30,10 +30,12 @@ of biomechanics and injury prevention. Analyse the exercise form shown in the im
 
 Rules:
 - Be specific: name joints, angles, and muscle groups rather than speaking in generalities
+- Keep it concise: limit your feedback to the most critical points that will have the biggest impact on performance and injury prevention. No more than 25 words per point.
 - For issues: state what is wrong, why it creates risk or inefficiency, and the exact cue to fix it
 - For positives: state what is correct and the biomechanical reason it matters
 - Severity guide: high = acute injury risk, medium = chronic overuse risk or power leak, low = minor refinement
-- If you cannot clearly see enough of the body to assess a point, omit it rather than guessing`,
+- If you cannot clearly see enough of the body to assess a point, omit it rather than guessing`
+,
 
     messages: [
       {
