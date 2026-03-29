@@ -17,6 +17,16 @@ export async function POST(request: Request) {
     });
   }
 
+  // base64 inflates size by ~33%, so a 5MB decoded image is ~6.8MB encoded.
+  // Reject before decoding to avoid unnecessary memory allocation.
+  const MAX_BASE64_LENGTH = 6.8 * 1024 * 1024;
+  if (base64Data.length > MAX_BASE64_LENGTH) {
+    return new Response(JSON.stringify({ error: "Image too large. Maximum size is 5MB." }), {
+      status: 413,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   // The SDK treats strings as URLs and tries to fetch them — including data:
   // URLs, which causes a DownloadError. Passing a Buffer tells the SDK this
   // is already binary data and bypasses the URL fetching path entirely.
