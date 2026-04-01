@@ -17,6 +17,13 @@ export async function POST(request: Request) {
     });
   }
 
+  if (!["image/jpeg", "image/png", "image/webp"].includes(mediaType)) {
+    return new Response(JSON.stringify({ error: "Unsupported image type. Only JPEG, PNG, and WEBP are allowed." }), {
+      status: 415,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   // base64 inflates size by ~33%, so a 5MB decoded image is ~6.8MB encoded.
   // Reject before decoding to avoid unnecessary memory allocation.
   const MAX_BASE64_LENGTH = 6.8 * 1024 * 1024;
