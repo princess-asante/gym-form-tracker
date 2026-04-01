@@ -1,7 +1,0 @@
-{
-  "rateLimit": {
-    "window": "1m",
-    "limit": 5,
-    "routes": ["/api/analyze"]
-  }
-}
