@@ -14,11 +14,13 @@ export default function AnalyzeForm() {
   const { object, isLoading, submit } = useObject({
     api: "/api/analyze",
     schema: FormFeedbackSchema,
-    onError: () => {
+    onError: (error) => {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: "Something went wrong!",
+        text:
+          error.message ||
+          "Something went wrong during analysis. Please try again.",
       });
     },
   });
