@@ -34,3 +34,42 @@ export const FormFeedbackSchema = z.object({
 })
 
 export type FormFeedback = z.infer<typeof FormFeedbackSchema>
+
+const timestamp = z
+  .string()
+  .regex(/^\d+:\d{2}$/, 'Must be in m:ss format, e.g. "0:03"')
+  .optional()
+  .describe('Timestamp in the video clip, e.g. "0:03"')
+
+export const VideoFormFeedbackSchema = FormFeedbackSchema.extend({
+  positives: z
+    .array(
+      z.object({
+        title: z.string().describe('Short label, e.g. "Neutral spine"'),
+        description: z
+          .string()
+          .describe('Why this is correct and the biomechanical benefit'),
+        timestamp,
+      })
+    )
+    .describe('Things the person is doing correctly'),
+
+  issues: z
+    .array(
+      z.object({
+        title: z.string().describe('Short label, e.g. "Knee cave"'),
+        description: z
+          .string()
+          .describe('What is wrong, why it matters, and how to fix it'),
+        severity: z
+          .enum(['low', 'medium', 'high'])
+          .describe(
+            'high = injury risk, medium = inefficiency, low = minor refinement'
+          ),
+        timestamp,
+      })
+    )
+    .describe('Form issues that need correction'),
+})
+
+export type VideoFormFeedback = z.infer<typeof VideoFormFeedbackSchema>

@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.64",
+    "@ai-sdk/google": "^3.0.58",
     "@ai-sdk/react": "^3.0.143",
+    "@google/genai": "^1.48.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "ai": "^6.0.141",
