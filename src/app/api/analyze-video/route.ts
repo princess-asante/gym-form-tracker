@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const videoBuffer = Buffer.from(await file.arrayBuffer());
   const mediaType = file.type;
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY;
   const uploadRes = await fetch(
     `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
     {
@@ -55,34 +55,44 @@ export async function POST(request: Request) {
       },
       body: videoBuffer,
     },
-  )
+  );
 
   if (!uploadRes.ok) {
-    const error = await uploadRes.text()
-    return Response.json({ error: `File upload failed: ${error}` }, { status: 502 })
+    const error = await uploadRes.text();
+    return Response.json(
+      { error: `File upload failed: ${error}` },
+      { status: 502 },
+    );
   }
 
-  const { file: uploadedFile } = await uploadRes.json() as {
-    file: { uri: string; name: string; state: string }
-  }
+  const { file: uploadedFile } = (await uploadRes.json()) as {
+    file: { uri: string; name: string; state: string };
+  };
 
-  let activeFile = uploadedFile
+  let activeFile = uploadedFile;
   while (activeFile.state !== "ACTIVE") {
     if (activeFile.state === "FAILED") {
-      return Response.json({ error: "File processing failed" }, { status: 500 })
+      return Response.json(
+        { error: "File processing failed" },
+        { status: 500 },
+      );
     }
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     const pollRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/${activeFile.name}?key=${apiKey}`,
-    )
+    );
     if (!pollRes.ok) {
-      return Response.json({ error: "File poll failed" }, { status: 502 })
+      return Response.json({ error: "File poll failed" }, { status: 502 });
     }
-    activeFile = (await pollRes.json()) as { uri: string; name: string; state: string }
+    activeFile = (await pollRes.json()) as {
+      uri: string;
+      name: string;
+      state: string;
+    };
   }
 
   const result = streamText({
-    model: google("gemini-2.0-flash"),
+    model: google("gemini-2.5-flash"),
     output: Output.object({ schema: VideoFormFeedbackSchema }),
     system: `You are an expert strength and conditioning coach with deep knowledge
 of biomechanics and injury prevention. Analyse the exercise form shown in the video clip.
