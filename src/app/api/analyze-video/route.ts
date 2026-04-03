@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const videoBuffer = Buffer.from(await file.arrayBuffer());
   const mediaType = file.type;
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const uploadRes = await fetch(
     `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
     {
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
   }
 
   const result = streamText({
-    model: google("gemini-2.5-flash"),
+    model: google("gemini-2.5-flash-lite"),
     output: Output.object({ schema: VideoFormFeedbackSchema }),
     system: `You are an expert strength and conditioning coach with deep knowledge
 of biomechanics and injury prevention. Analyse the exercise form shown in the video clip.

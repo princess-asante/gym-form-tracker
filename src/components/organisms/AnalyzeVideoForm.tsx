@@ -39,10 +39,9 @@ export default function AnalyzeVideoForm() {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text:
-          error.message ||
-          "Something went wrong during analysis. Please try again.",
+        text: "Something went wrong during analysis. Please try again.",
       });
+      console.error("Analysis error:", error);
     },
   });
 
@@ -101,10 +100,7 @@ export default function AnalyzeVideoForm() {
       </div>
 
       {(hasResult || isLoading) && (
-        <FeedbackPanel
-          feedback={object ?? {}}
-          isLoading={isLoading}
-        />
+        <FeedbackPanel feedback={object ?? {}} isLoading={isLoading} />
       )}
     </div>
   );
