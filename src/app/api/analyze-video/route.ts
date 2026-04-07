@@ -4,72 +4,23 @@ import { VideoFormFeedbackSchema } from "@/lib/schemas";
 
 export const dynamic = "force-dynamic";
 
-const ACCEPTED_MIME_TYPES = [
-  "video/mp4",
-  "video/webm",
-  "video/quicktime",
-] as const;
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
-
 export async function POST(request: Request) {
-  const formData = await request.formData();
-  const file = formData.get("video");
-
-  if (!(file instanceof File)) {
-    return Response.json({ error: "No video file provided" }, { status: 400 });
-  }
-
-  if (
-    !ACCEPTED_MIME_TYPES.includes(
-      file.type as (typeof ACCEPTED_MIME_TYPES)[number],
-    )
-  ) {
-    return Response.json(
-      {
-        error: `Unsupported file type. Accepted: ${ACCEPTED_MIME_TYPES.join(", ")}`,
-      },
-      { status: 415 },
-    );
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return Response.json(
-      { error: "File exceeds the 50 MB limit" },
-      { status: 413 },
-    );
-  }
-
-  const videoBuffer = Buffer.from(await file.arrayBuffer());
-  const mediaType = file.type;
-
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  const uploadRes = await fetch(
-    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": mediaType,
-        "X-Goog-Upload-Command": "upload, finalize",
-        "X-Goog-Upload-Header-Content-Length": String(videoBuffer.byteLength),
-        "X-Goog-Upload-Header-Content-Type": mediaType,
-      },
-      body: videoBuffer,
-    },
-  );
-
-  if (!uploadRes.ok) {
-    const error = await uploadRes.text();
-    return Response.json(
-      { error: `File upload failed: ${error}` },
-      { status: 502 },
-    );
-  }
-
-  const { file: uploadedFile } = (await uploadRes.json()) as {
-    file: { uri: string; name: string; state: string };
+  const { fileName, mediaType } = (await request.json()) as {
+    fileName: string;
+    mediaType: string;
   };
 
-  let activeFile = uploadedFile;
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
+  // Poll until Gemini has finished processing the video (state = ACTIVE).
+  // The browser already uploaded the bytes; we just need to wait for Gemini
+  // to transcode and index them before we can reference the file in a prompt.
+  let activeFile = { name: fileName, uri: "", state: "PROCESSING" } as {
+    name: string;
+    uri: string;
+    state: string;
+  };
+
   while (activeFile.state !== "ACTIVE") {
     if (activeFile.state === "FAILED") {
       return Response.json(
@@ -79,14 +30,14 @@ export async function POST(request: Request) {
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
     const pollRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${activeFile.name}?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`,
     );
     if (!pollRes.ok) {
       return Response.json({ error: "File poll failed" }, { status: 502 });
     }
     activeFile = (await pollRes.json()) as {
-      uri: string;
       name: string;
+      uri: string;
       state: string;
     };
   }
