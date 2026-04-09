@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
+import Swal from "sweetalert2";
 import { VideoFormFeedbackSchema } from "@/lib/schemas";
 import FeedbackPanel from "@/components/organisms/FeedbackPanel";
 import Button from "@/components/atoms/Button";
@@ -30,65 +31,66 @@ export default function AnalyzeVideoForm() {
         throw new Error("No file to upload");
       }
 
-      setPhase("uploading");
+      try {
+        setPhase("uploading");
 
-      // Step 1: Get upload URL from our API
-      const initiateRes = await fetch("/api/video-upload-route", {
-        method: "POST",
-        headers: {
-          "X-Upload-Action": "initiate",
-          "X-Mime-Type": fileContent?.type,
-          "X-File-Size": String(fileContent?.size),
-        },
-      });
-
-      if (!initiateRes.ok) {
-        const error = await initiateRes.text();
-        throw new Error(`Failed to initiate upload: ${error}`);
-      }
-
-      const { uploadUrl } = await initiateRes.json();
-
-      // Step 2: Upload the file in a single chunk (for simplicity; ideally should handle chunking for large files)
-      let offset = 0;
-      let fileName: string | undefined;
-      while (offset < fileContent.size) {
-        const isFinalChunk = offset + fileContent.size >= fileContent.size;
-        const chunkingRes = await fetch("/api/video-upload-route", {
+        // Step 1: Get upload URL from our API
+        const initiateRes = await fetch("/api/video-upload-route", {
           method: "POST",
           headers: {
-            "X-Upload-Action": "chunk",
-            "X-File-Size": String(fileContent.size),
-            "X-Upload-URL": uploadUrl,
-            "X-Upload-Offset": String(offset),
-            "X-Final-Chunk": String(isFinalChunk),
+            "X-Upload-Action": "initiate",
+            "X-Mime-Type": fileContent?.type,
+            "X-File-Size": String(fileContent?.size),
           },
-          body: fileContent.slice(offset, offset + fileContent.size),
         });
 
-        if (!chunkingRes.ok) {
-          const error = await chunkingRes.text();
-          throw new Error(`Failed to upload chunk: ${error}`);
+        const initiateData = await initiateRes.json();
+        if (!initiateRes.ok) throw new Error(initiateData.error);
+        const { uploadUrl } = initiateData;
+
+        // Step 2: Upload the file in a single chunk (for simplicity; ideally should handle chunking for large files)
+        let offset = 0;
+        let fileName: string | undefined;
+        while (offset < fileContent.size) {
+          const isFinalChunk = offset + fileContent.size >= fileContent.size;
+          const chunkingRes = await fetch("/api/video-upload-route", {
+            method: "POST",
+            headers: {
+              "X-Upload-Action": "chunk",
+              "X-File-Size": String(fileContent.size),
+              "X-Upload-URL": uploadUrl,
+              "X-Upload-Offset": String(offset),
+              "X-Final-Chunk": String(isFinalChunk),
+            },
+            body: fileContent.slice(offset, offset + fileContent.size),
+          });
+
+          const chunkData = await chunkingRes.json();
+          if (!chunkingRes.ok) throw new Error(chunkData.error);
+          if (isFinalChunk) fileName = chunkData.fileName;
+
+          offset += fileContent.size;
         }
 
-        if (isFinalChunk) {
-          const data = await chunkingRes.json();
-          fileName = data.fileName;
+        if (!fileName) {
+          throw new Error("Upload completed but no fileName returned");
         }
 
-        offset += fileContent.size;
+        // Step 3: Kick off analysis — return the streaming response for useObject to consume
+        setPhase("analyzing");
+        return fetch(input, {
+          ...init,
+          body: JSON.stringify({ fileName, mediaType: fileContent.type }),
+        });
+      } catch (err) {
+        setPhase("idle");
+        Swal.fire({
+          icon: "error",
+          title: "Upload failed",
+          text: err instanceof Error ? err.message : "Something went wrong. Please try again.",
+        });
+        throw err;
       }
-
-      if (!fileName) {
-        throw new Error("Upload completed but no fileName returned");
-      }
-
-      // Step 3: Kick off analysis — return the streaming response for useObject to consume
-      setPhase("analyzing");
-      return fetch(input, {
-        ...init,
-        body: JSON.stringify({ fileName, mediaType: fileContent.type }),
-      });
     },
   });
 

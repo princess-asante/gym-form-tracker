@@ -2,6 +2,8 @@
 
 import { useRef, useState, useEffect, DragEvent, ChangeEvent } from "react";
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
 type VideoDropzoneProps = {
   file: File | null;
   onVideoChange: (file: File) => void;
@@ -16,6 +18,7 @@ export default function VideoDropzone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [sizeError, setSizeError] = useState(false);
 
   useEffect(() => {
     if (!file) {
@@ -27,9 +30,18 @@ export default function VideoDropzone({
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
+  function handleFile(f: File) {
+    if (f.size > MAX_FILE_SIZE) {
+      setSizeError(true);
+      return;
+    }
+    setSizeError(false);
+    onVideoChange(f);
+  }
+
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (f) onVideoChange(f);
+    if (f) handleFile(f);
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
@@ -43,7 +55,7 @@ export default function VideoDropzone({
         f.type === "video/webm" ||
         f.type === "video/quicktime")
     ) {
-      onVideoChange(f);
+      handleFile(f);
     }
   }
 
@@ -114,8 +126,13 @@ export default function VideoDropzone({
               Drop a video here, or click to browse
             </p>
             <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-              MP4, WebM, or MOV
+              MP4, WebM, or MOV · Max 50 MB
             </p>
+            {sizeError && (
+              <p className="mt-2 text-xs text-red-500">
+                File exceeds the 50 MB limit.
+              </p>
+            )}
           </div>
         </div>
       )}

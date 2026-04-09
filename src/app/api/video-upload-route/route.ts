@@ -1,4 +1,5 @@
 const ACCEPTED_MIME_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const GEMINI_UPLOAD_HOST = "https://generativelanguage.googleapis.com";
 
 export async function POST(request: Request) {
@@ -22,6 +23,13 @@ export async function POST(request: Request) {
           error: `Unsupported file type. Accepted: ${ACCEPTED_MIME_TYPES.join(", ")}`,
         },
         { status: 415 },
+      );
+    }
+
+    if (Number(fileSize) > MAX_FILE_SIZE) {
+      return Response.json(
+        { error: "File exceeds the 50 MB limit" },
+        { status: 413 },
       );
     }
 
