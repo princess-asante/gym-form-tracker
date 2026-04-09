@@ -2,132 +2,103 @@
 
 import { useRef, useState } from "react";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
-import Swal from "sweetalert2";
 import { VideoFormFeedbackSchema } from "@/lib/schemas";
-import VideoDropzone from "@/components/molecules/VideoDropzone";
 import FeedbackPanel from "@/components/organisms/FeedbackPanel";
 import Button from "@/components/atoms/Button";
+import VideoDropzone from "../molecules/VideoDropzone";
 
-type Phase = "idle" | "initiating" | "uploading" | "analysing";
+type Phase = "uploading" | "analyzing" | "idle";
 
 export default function AnalyzeVideoForm() {
   const [file, setFile] = useState<File | null>(null);
-  const [phase, setPhase] = useState<Phase>("idle");
-  // Refs so the useObject fetch closure always reads the latest values
-  // without going stale from the render where submit() was called.
   const fileRef = useRef<File | null>(null);
-  const fileNameRef = useRef<string | null>(null);
-
-  const { object, submit } = useObject({
-    api: "/api/analyze-video",
-    schema: VideoFormFeedbackSchema,
-    // useObject normally sends its argument as a JSON body to the api URL.
-    // We override fetch so we can run the upload steps first, then pass
-    // the resulting fileName in the body instead of the raw file.
-    fetch: async (input, init) => {
-      const currentFile = fileRef.current!;
-
-      // --- Phase 1: ask our server to open a Gemini upload session ---
-      // Sends only {mimeType, size} — a tiny JSON request.
-      // Our server calls Gemini with the API key (never exposed to the browser)
-      // and returns a one-time upload URL.
-      setPhase("initiating");
-      const initiateRes = await fetch("/api/video-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mimeType: currentFile.type,
-          size: currentFile.size,
-        }),
-      });
-
-      if (!initiateRes.ok) {
-        throw new Error("Failed to initiate upload");
-      }
-
-      const { uploadUrl } = (await initiateRes.json()) as {
-        uploadUrl: string;
-      };
-
-      // --- Phase 2: upload the video bytes directly to Gemini ---
-      // The upload URL already contains an embedded token — no API key needed.
-      // The large video goes straight from the browser to Gemini, bypassing
-      // our Next.js server entirely, so no FUNCTION_PAYLOAD_TOO_LARGE.
-      setPhase("uploading");
-      const uploadRes = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Length": String(currentFile.size),
-          "X-Goog-Upload-Offset": "0",
-          "X-Goog-Upload-Command": "upload, finalize",
-        },
-        body: currentFile,
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error("Video upload to Gemini failed");
-      }
-
-      // Gemini returns the file metadata once the upload is finalised.
-      // We need the `name` (e.g. "files/abc123") so the analyse route can
-      // poll for ACTIVE state and reference the file in the prompt.
-      const { name: fileName } = (await uploadRes.json()) as {
-        name: string;
-        uri: string;
-        state: string;
-      };
-      fileNameRef.current = fileName;
-
-      // --- Phase 3: call the analyse route with just the file name ---
-      // This request is tiny JSON — no payload problem.
-      setPhase("analysing");
-      return fetch(input as string, {
-        ...init,
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName, mediaType: currentFile.type }),
-      });
-    },
-    onFinish: () => setPhase("idle"),
-    onError: (error) => {
-      setPhase("idle");
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: error.message || "Something went wrong during analysis. Please try again.",
-      });
-      console.error("Analysis error:", error);
-    },
-  });
+  const [phase, setPhase] = useState<Phase>("idle");
 
   function handleVideoChange(f: File) {
     setFile(f);
     fileRef.current = f;
   }
 
-  function handleAnalyze() {
-    if (!file) return;
-    submit({});
-  }
+  const { object, submit } = useObject({
+    api: "/api/analyze-video",
+    schema: VideoFormFeedbackSchema,
+    onFinish: () => setPhase("idle"),
+    onError: () => setPhase("idle"),
+    fetch: async (input, init) => {
+      const fileContent = fileRef.current;
+      if (!fileContent) {
+        throw new Error("No file to upload");
+      }
 
-  function handleClear() {
-    setFile(null);
-    fileRef.current = null;
-    fileNameRef.current = null;
-  }
+      setPhase("uploading");
+
+      // Step 1: Get upload URL from our API
+      const initiateRes = await fetch("/api/video-upload-route", {
+        method: "POST",
+        headers: {
+          "X-Upload-Action": "initiate",
+          "X-Mime-Type": fileContent?.type,
+          "X-File-Size": String(fileContent?.size),
+        },
+      });
+
+      if (!initiateRes.ok) {
+        const error = await initiateRes.text();
+        throw new Error(`Failed to initiate upload: ${error}`);
+      }
+
+      const { uploadUrl } = await initiateRes.json();
+
+      // Step 2: Upload the file in a single chunk (for simplicity; ideally should handle chunking for large files)
+      let offset = 0;
+      let fileName: string | undefined;
+      while (offset < fileContent.size) {
+        const isFinalChunk = offset + fileContent.size >= fileContent.size;
+        const chunkingRes = await fetch("/api/video-upload-route", {
+          method: "POST",
+          headers: {
+            "X-Upload-Action": "chunk",
+            "X-File-Size": String(fileContent.size),
+            "X-Upload-URL": uploadUrl,
+            "X-Upload-Offset": String(offset),
+            "X-Final-Chunk": String(isFinalChunk),
+          },
+          body: fileContent.slice(offset, offset + fileContent.size),
+        });
+
+        if (!chunkingRes.ok) {
+          const error = await chunkingRes.text();
+          throw new Error(`Failed to upload chunk: ${error}`);
+        }
+
+        if (isFinalChunk) {
+          const data = await chunkingRes.json();
+          fileName = data.fileName;
+        }
+
+        offset += fileContent.size;
+      }
+
+      if (!fileName) {
+        throw new Error("Upload completed but no fileName returned");
+      }
+
+      // Step 3: Kick off analysis — return the streaming response for useObject to consume
+      setPhase("analyzing");
+      return fetch(input, {
+        ...init,
+        body: JSON.stringify({ fileName, mediaType: fileContent.type }),
+      });
+    },
+  });
 
   const isLoading = phase !== "idle";
-  const hasResult = !!object;
-  const canSubmit = !!file && !isLoading;
+  const canSubmit = file !== null && phase === "idle";
+  const hasResult = object !== undefined;
 
-  const buttonLabel =
-    phase === "initiating"
-      ? "Preparing…"
-      : phase === "uploading"
-        ? "Uploading…"
-        : phase === "analysing"
-          ? "Analysing…"
-          : "Analyse form";
+  function handleAnalyze() {
+    submit({});
+  }
 
   return (
     <div className="flex flex-col gap-8 w-full">
@@ -135,7 +106,7 @@ export default function AnalyzeVideoForm() {
         <VideoDropzone
           file={file}
           onVideoChange={handleVideoChange}
-          disabled={isLoading}
+          disabled={phase !== "idle"}
         />
 
         <div className="flex items-center gap-3">
@@ -145,13 +116,16 @@ export default function AnalyzeVideoForm() {
             loading={isLoading}
             className="w-full"
           >
-            {buttonLabel}
+            {isLoading ? "Analysing…" : "Analyse form"}
           </Button>
 
-          {file && !isLoading && (
+          {file && phase === "idle" && (
             <Button
               variant="ghost"
-              onClick={handleClear}
+              onClick={() => {
+                setFile(null);
+                fileRef.current = null;
+              }}
               aria-label="Remove video"
             >
               Clear
