@@ -48,28 +48,30 @@ export default function AnalyzeVideoForm() {
         if (!initiateRes.ok) throw new Error(initiateData.error);
         const { uploadUrl } = initiateData;
 
-        // Step 2: Upload the file in a single chunk (for simplicity; ideally should handle chunking for large files)
+        // Step 2: Upload the file in chunks of up to 4 MB (safely under Vercel's 4.5 MB request body limit)
+        const CHUNK_SIZE = 4 * 1024 * 1024;
         let offset = 0;
         let fileName: string | undefined;
         while (offset < fileContent.size) {
-          const isFinalChunk = offset + fileContent.size >= fileContent.size;
+          const chunkEnd = Math.min(offset + CHUNK_SIZE, fileContent.size);
+          const isFinalChunk = chunkEnd >= fileContent.size;
           const chunkingRes = await fetch("/api/video-upload-route", {
             method: "POST",
             headers: {
               "X-Upload-Action": "chunk",
-              "X-File-Size": String(fileContent.size),
+              "X-File-Size": String(chunkEnd - offset),
               "X-Upload-URL": uploadUrl,
               "X-Upload-Offset": String(offset),
               "X-Final-Chunk": String(isFinalChunk),
             },
-            body: fileContent.slice(offset, offset + fileContent.size),
+            body: fileContent.slice(offset, chunkEnd),
           });
 
           const chunkData = await chunkingRes.json();
           if (!chunkingRes.ok) throw new Error(chunkData.error);
           if (isFinalChunk) fileName = chunkData.fileName;
 
-          offset += fileContent.size;
+          offset = chunkEnd;
         }
 
         if (!fileName) {
