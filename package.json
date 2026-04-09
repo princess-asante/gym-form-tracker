@@ -15,6 +15,7 @@
     "@google/genai": "^1.48.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "@vercel/analytics": "^2.0.1",
     "ai": "^6.0.141",
     "next": "16.2.1",
     "react": "19.2.4",
