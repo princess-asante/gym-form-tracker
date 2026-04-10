@@ -36,7 +36,7 @@ export default function AnalyzeVideoForm() {
         setPhase("uploading");
 
         // Step 1: Upload directly to Vercel Blob — bypasses the serverless payload limit entirely
-        const { url: blobUrl } = await upload(fileContent.name, fileContent, {
+        const { url: blobUrl } = await upload(`${Date.now()}-${fileContent.name}`, fileContent, {
           access: "public",
           handleUploadUrl: "/api/blob-upload",
           contentType: fileContent.type,
@@ -44,12 +44,21 @@ export default function AnalyzeVideoForm() {
 
         // Step 2: Kick off analysis — return the streaming response for useObject to consume
         setPhase("analyzing");
-        return fetch(input, {
+        const res = await fetch(input, {
           ...init,
           body: JSON.stringify({ blobUrl, mediaType: fileContent.type }),
         });
+
+        if (!res.ok) {
+          const { error } = (await res.json()) as { error: string };
+          throw new Error(error);
+        }
+
+        return res;
       } catch (err) {
         setPhase("idle");
+        setFile(null);
+        fileRef.current = null;
         Swal.fire({
           icon: "error",
           title: "Upload failed",

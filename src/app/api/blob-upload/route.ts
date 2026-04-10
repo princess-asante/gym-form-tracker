@@ -15,7 +15,6 @@ export async function POST(request: Request): Promise<Response> {
           access: "public",
           allowedContentTypes: ACCEPTED_MIME_TYPES,
           maximumSizeInBytes: MAX_FILE_SIZE,
-          allowOverwrite: true,
         };
       },
     });
