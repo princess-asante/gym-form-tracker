@@ -8,6 +8,7 @@ import { VideoFormFeedbackSchema } from "@/lib/schemas";
 import FeedbackPanel from "@/components/organisms/FeedbackPanel";
 import Button from "@/components/atoms/Button";
 import VideoDropzone from "../molecules/VideoDropzone";
+import WorkoutSelector, { type Exercise, type Muscle } from "@/components/molecules/WorkoutSelector";
 
 type Phase = "uploading" | "analyzing" | "idle";
 
@@ -15,6 +16,8 @@ export default function AnalyzeVideoForm() {
   const [file, setFile] = useState<File | null>(null);
   const fileRef = useRef<File | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [exercise, setExercise] = useState<Exercise | "">("");
+  const [targetMuscles, setTargetMuscles] = useState<Muscle[]>([]);
 
   function handleVideoChange(f: File) {
     setFile(f);
@@ -46,7 +49,12 @@ export default function AnalyzeVideoForm() {
         setPhase("analyzing");
         const res = await fetch(input, {
           ...init,
-          body: JSON.stringify({ blobUrl, mediaType: fileContent.type }),
+          body: JSON.stringify({
+            blobUrl,
+            mediaType: fileContent.type,
+            exercise: exercise || undefined,
+            targetMuscles: targetMuscles.length ? targetMuscles : undefined,
+          }),
         });
 
         if (!res.ok) {
@@ -84,6 +92,14 @@ export default function AnalyzeVideoForm() {
           file={file}
           onVideoChange={handleVideoChange}
           disabled={phase !== "idle"}
+        />
+
+        <WorkoutSelector
+          exercise={exercise}
+          targetMuscles={targetMuscles}
+          onExerciseChange={setExercise}
+          onMusclesChange={setTargetMuscles}
+          disabled={isLoading}
         />
 
         <div className="flex items-center gap-3">

@@ -10,9 +10,11 @@ const GEMINI_UPLOAD_URL =
   "https://generativelanguage.googleapis.com/upload/v1beta/files";
 
 export async function POST(request: Request) {
-  const { blobUrl, mediaType } = (await request.json()) as {
+  const { blobUrl, mediaType, exercise, targetMuscles } = (await request.json()) as {
     blobUrl: string;
     mediaType: string;
+    exercise?: string;
+    targetMuscles?: string[];
   };
 
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -162,6 +164,7 @@ export async function POST(request: Request) {
     model: google("gemini-2.5-flash-lite"),
     output: Output.object({ schema: VideoFormFeedbackSchema }),
     system: `You are a friendly but expert strength and conditioning coach. You understand how the body moves and how to keep people safe while they train. Analyse the exercise form shown in the video clip and give feedback that is clear enough for a complete beginner to understand and act on.
+${exercise ? `The exercise being performed is: ${exercise}.` : ""}${targetMuscles?.length ? ` The user is focusing on targeting: ${targetMuscles.join(", ")}.` : ""}
 
 Rules:
 - Be specific: name the body part, joint, or muscle you are referring to — avoid vague phrases like "your form looks off"

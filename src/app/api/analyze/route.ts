@@ -6,7 +6,11 @@ import { FormFeedbackSchema } from "@/lib/schemas";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const { image } = await request.json();
+  const { image, exercise, targetMuscles } = (await request.json()) as {
+    image: string;
+    exercise?: string;
+    targetMuscles?: string[];
+  };
 
   const [header, base64Data] = (image as string).split(",");
   const mediaType = header.match(/:(.*?);/)?.[1];
@@ -44,6 +48,7 @@ export async function POST(request: Request) {
     model: anthropic("claude-sonnet-4-6"),
     output: Output.object({ schema: FormFeedbackSchema }),
     system: `You are a friendly but expert strength and conditioning coach. You understand how the body moves and how to keep people safe while they train. Analyse the exercise form shown in the image and give feedback that is clear enough for a complete beginner to understand and act on.
+${exercise ? `The exercise being performed is: ${exercise}.` : ""}${targetMuscles?.length ? ` The user is focusing on targeting: ${targetMuscles.join(", ")}.` : ""}
 
 Rules:
 - Be specific: name the body part, joint, or muscle you are referring to — avoid vague phrases like "your form looks off"

@@ -7,9 +7,12 @@ import { FormFeedbackSchema } from "@/lib/schemas";
 import ImageDropzone from "@/components/molecules/ImageDropzone";
 import FeedbackPanel from "@/components/organisms/FeedbackPanel";
 import Button from "@/components/atoms/Button";
+import WorkoutSelector, { type Exercise, type Muscle } from "@/components/molecules/WorkoutSelector";
 
 export default function AnalyzeForm() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [exercise, setExercise] = useState<Exercise | "">("");
+  const [targetMuscles, setTargetMuscles] = useState<Muscle[]>([]);
 
   const { object, isLoading, submit } = useObject({
     api: "/api/analyze",
@@ -25,10 +28,14 @@ export default function AnalyzeForm() {
     },
   });
 
-  function handleAnalyze() {
+  const handleAnalyze = () => {
     if (!imageUrl) return;
-    submit({ image: imageUrl });
-  }
+    submit({
+      image: imageUrl,
+      exercise: exercise || undefined,
+      targetMuscles: targetMuscles.length ? targetMuscles : undefined,
+    });
+  };
 
   const hasResult = !!object;
   const canSubmit = !!imageUrl && !isLoading;
@@ -39,6 +46,14 @@ export default function AnalyzeForm() {
         <ImageDropzone
           imageUrl={imageUrl}
           onImageChange={setImageUrl}
+          disabled={isLoading}
+        />
+
+        <WorkoutSelector
+          exercise={exercise}
+          targetMuscles={targetMuscles}
+          onExerciseChange={setExercise}
+          onMusclesChange={setTargetMuscles}
           disabled={isLoading}
         />
 
