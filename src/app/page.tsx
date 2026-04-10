@@ -18,7 +18,8 @@ export default function Home() {
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Upload a photo or video of your exercise and get instant form
-            feedback.
+            feedback. You can also optionally add the exercise you're doing and
+            the muscles you're targeting to get more tailored advice!
           </p>
         </header>
 
