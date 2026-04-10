@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
     if (!mimeType || !fileSize) {
       return Response.json(
-        { error: "Missing x-video-mime-type or x-video-size header" },
+        { error: "[analyze] Missing x-video-mime-type or x-video-size header" },
         { status: 400 },
       );
     }
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     if (!ACCEPTED_MIME_TYPES.includes(mimeType)) {
       return Response.json(
         {
-          error: `Unsupported file type. Accepted: ${ACCEPTED_MIME_TYPES.join(", ")}`,
+          error: `[analyze] Unsupported file type. Accepted: ${ACCEPTED_MIME_TYPES.join(", ")}`,
         },
         { status: 415 },
       );
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     if (Number(fileSize) > MAX_FILE_SIZE) {
       return Response.json(
-        { error: "File exceeds the 50 MB limit" },
+        { error: "[analyze] File exceeds the 50 MB limit" },
         { status: 413 },
       );
     }

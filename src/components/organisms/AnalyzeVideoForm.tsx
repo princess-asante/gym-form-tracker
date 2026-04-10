@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { upload } from "@vercel/blob/client";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import Swal from "sweetalert2";
 import { VideoFormFeedbackSchema } from "@/lib/schemas";
@@ -34,55 +35,18 @@ export default function AnalyzeVideoForm() {
       try {
         setPhase("uploading");
 
-        // Step 1: Get upload URL from our API
-        const initiateRes = await fetch("/api/video-upload-route", {
-          method: "POST",
-          headers: {
-            "X-Upload-Action": "initiate",
-            "X-Mime-Type": fileContent?.type,
-            "X-File-Size": String(fileContent?.size),
-          },
+        // Step 1: Upload directly to Vercel Blob — bypasses the serverless payload limit entirely
+        const { url: blobUrl } = await upload(fileContent.name, fileContent, {
+          access: "public",
+          handleUploadUrl: "/api/blob-upload",
+          contentType: fileContent.type,
         });
 
-        const initiateData = await initiateRes.json();
-        if (!initiateRes.ok) throw new Error(initiateData.error);
-        const { uploadUrl } = initiateData;
-
-        // Step 2: Upload the file in chunks of up to 4 MB (safely under Vercel's 4.5 MB request body limit)
-        const CHUNK_SIZE = 4 * 1024 * 1024;
-        let offset = 0;
-        let fileName: string | undefined;
-        while (offset < fileContent.size) {
-          const chunkEnd = Math.min(offset + CHUNK_SIZE, fileContent.size);
-          const isFinalChunk = chunkEnd >= fileContent.size;
-          const chunkingRes = await fetch("/api/video-upload-route", {
-            method: "POST",
-            headers: {
-              "X-Upload-Action": "chunk",
-              "X-File-Size": String(chunkEnd - offset),
-              "X-Upload-URL": uploadUrl,
-              "X-Upload-Offset": String(offset),
-              "X-Final-Chunk": String(isFinalChunk),
-            },
-            body: fileContent.slice(offset, chunkEnd),
-          });
-
-          const chunkData = await chunkingRes.json();
-          if (!chunkingRes.ok) throw new Error(chunkData.error);
-          if (isFinalChunk) fileName = chunkData.fileName;
-
-          offset = chunkEnd;
-        }
-
-        if (!fileName) {
-          throw new Error("Upload completed but no fileName returned");
-        }
-
-        // Step 3: Kick off analysis — return the streaming response for useObject to consume
+        // Step 2: Kick off analysis — return the streaming response for useObject to consume
         setPhase("analyzing");
         return fetch(input, {
           ...init,
-          body: JSON.stringify({ fileName, mediaType: fileContent.type }),
+          body: JSON.stringify({ blobUrl, mediaType: fileContent.type }),
         });
       } catch (err) {
         setPhase("idle");
