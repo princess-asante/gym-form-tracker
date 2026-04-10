@@ -73,3 +73,21 @@ export const VideoFormFeedbackSchema = FormFeedbackSchema.extend({
 })
 
 export type VideoFormFeedback = z.infer<typeof VideoFormFeedbackSchema>
+
+export const LiveFeedbackSchema = z.object({
+  cues: z
+    .array(
+      z.object({
+        text: z.string().describe('Single actionable cue, max 6 words. e.g. "Drive knees out"'),
+        severity: z.enum(['low', 'medium', 'high']),
+      })
+    )
+    .max(2)
+    .describe('Up to 2 form corrections, ordered by severity descending'),
+  positive: z
+    .string()
+    .optional()
+    .describe('One short positive observation, max 6 words. Omit if nothing notable.'),
+})
+
+export type LiveFeedback = z.infer<typeof LiveFeedbackSchema>
