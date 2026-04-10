@@ -15,7 +15,7 @@ export default function AnalyzeForm() {
   const [targetMuscles, setTargetMuscles] = useState<Muscle[]>([]);
 
   const { object, isLoading, submit } = useObject({
-    api: "/api/analyze",
+    api: "/api/analyze-photo",
     schema: FormFeedbackSchema,
     onError: (error) => {
       Swal.fire({

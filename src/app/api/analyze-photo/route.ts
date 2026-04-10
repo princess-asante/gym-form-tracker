@@ -2,6 +2,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { Output, streamText } from "ai";
 import sharp from "sharp";
 import { FormFeedbackSchema } from "@/lib/schemas";
+import { buildSystemPrompt } from "@/lib/prompts";
 
 export const dynamic = "force-dynamic";
 
@@ -47,18 +48,7 @@ export async function POST(request: Request) {
   const result = streamText({
     model: anthropic("claude-sonnet-4-6"),
     output: Output.object({ schema: FormFeedbackSchema }),
-    system: `You are a friendly but expert strength and conditioning coach. You understand how the body moves and how to keep people safe while they train. Analyse the exercise form shown in the image and give feedback that is clear enough for a complete beginner to understand and act on.
-${exercise ? `The exercise being performed is: ${exercise}.` : ""}${targetMuscles?.length ? ` The user is focusing on targeting: ${targetMuscles.join(", ")}.` : ""}
-
-Rules:
-- Be specific: name the body part, joint, or muscle you are referring to — avoid vague phrases like "your form looks off"
-- Keep each point short: no more than 25 words. Focus on the most important things that will make the biggest difference to safety and results.
-- For issues: clearly explain what is wrong, why it matters (e.g. it puts strain on the knee, it wastes energy), and give one simple cue to fix it
-- For positives: explain what the person is doing well and why it is beneficial — this helps reinforce good habits
-- Severity guide: high = risk of immediate injury, medium = risk of long-term injury or wasted effort over time, low = a small improvement that would help
-- Use plain, everyday language: say "lower back" not "lumbar spine", "kneecap" not "patella", "thigh muscles" not "posterior chain". Avoid anatomical Latin terms entirely unless there is no simpler alternative
-- If you cannot clearly see enough of the body to assess a point, leave it out rather than guessing`
-,
+    system: buildSystemPrompt("image", { exercise, targetMuscles }),
 
     messages: [
       {
