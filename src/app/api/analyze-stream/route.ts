@@ -1,4 +1,4 @@
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { Output, streamText } from "ai";
 import sharp from "sharp";
 import { LiveFeedbackSchema } from "@/lib/schemas";
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   });
 
   const result = streamText({
-    model: anthropic("claude-sonnet-4-6"),
+    model: google("gemini-2.5-flash-lite"),
     output: Output.object({ schema: LiveFeedbackSchema }),
     system: buildSystemPrompt("live frame", { exercise, targetMuscles }),
     messages: [
