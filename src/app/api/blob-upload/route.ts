@@ -1,4 +1,5 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { logger } from "@/lib/logger";
 
 const ACCEPTED_MIME_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
@@ -21,7 +22,7 @@ export async function POST(request: Request): Promise<Response> {
 
     return Response.json(jsonResponse);
   } catch (err) {
-    console.error("[blob-upload] handleUpload failed", err);
+    logger.error("[blob-upload] handleUpload failed", { err });
     return Response.json({ error: "Upload failed" }, { status: 400 });
   }
 }

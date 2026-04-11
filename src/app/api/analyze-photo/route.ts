@@ -3,6 +3,7 @@ import { Output, streamText } from "ai";
 import sharp from "sharp";
 import { FormFeedbackSchema } from "@/lib/schemas";
 import { buildSystemPrompt } from "@/lib/prompts";
+import { errorResponse } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -17,27 +18,18 @@ export async function POST(request: Request) {
   const mediaType = header.match(/:(.*?);/)?.[1];
 
   if (!base64Data || !mediaType) {
-    return new Response(JSON.stringify({ error: "Invalid image format" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return errorResponse("Invalid image format", 400);
   }
 
   if (!["image/jpeg", "image/png", "image/webp"].includes(mediaType)) {
-    return new Response(JSON.stringify({ error: "Unsupported image type. Only JPEG, PNG, and WEBP are allowed." }), {
-      status: 415,
-      headers: { "Content-Type": "application/json" },
-    });
+    return errorResponse("Unsupported image type. Only JPEG, PNG, and WEBP are allowed.", 415);
   }
 
   // base64 inflates size by ~33%, so a 5MB decoded image is ~6.8MB encoded.
   // Reject before decoding to avoid unnecessary memory allocation.
   const MAX_BASE64_LENGTH = 6.8 * 1024 * 1024;
   if (base64Data.length > MAX_BASE64_LENGTH) {
-    return new Response(JSON.stringify({ error: "Image too large. Maximum size is 5MB." }), {
-      status: 413,
-      headers: { "Content-Type": "application/json" },
-    });
+    return errorResponse("Image too large. Maximum size is 5MB.", 413);
   }
 
   // The SDK treats strings as URLs and tries to fetch them — including data:

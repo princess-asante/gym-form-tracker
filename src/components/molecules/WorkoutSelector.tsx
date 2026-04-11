@@ -1,33 +1,7 @@
 "use client";
 
-export const EXERCISES = [
-  "Squat",
-  "Deadlift",
-  "Bench Press",
-  "Overhead Press",
-  "Barbell Row",
-  "Romanian Deadlift",
-  "Pull-up",
-  "Hip Thrust",
-  "Lunge",
-] as const;
-
-export const MUSCLES = [
-  "Quads",
-  "Hamstrings",
-  "Glutes",
-  "Lower back",
-  "Upper back",
-  "Chest",
-  "Shoulders",
-  "Triceps",
-  "Biceps",
-  "Core",
-  "Calves",
-] as const;
-
-export type Exercise = (typeof EXERCISES)[number];
-export type Muscle = (typeof MUSCLES)[number];
+import { EXERCISES, MUSCLES, type Exercise, type Muscle } from "@/lib/constants";
+export type { Exercise, Muscle } from "@/lib/constants";
 
 interface Props {
   exercise: Exercise | "";

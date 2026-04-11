@@ -7,7 +7,8 @@ import { FormFeedbackSchema } from "@/lib/schemas";
 import ImageDropzone from "@/components/molecules/ImageDropzone";
 import FeedbackPanel from "@/components/organisms/FeedbackPanel";
 import Button from "@/components/atoms/Button";
-import WorkoutSelector, { type Exercise, type Muscle } from "@/components/molecules/WorkoutSelector";
+import WorkoutSelector from "@/components/molecules/WorkoutSelector";
+import { type Exercise, type Muscle } from "@/lib/constants";
 
 export default function AnalyzeForm() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);

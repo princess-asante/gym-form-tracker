@@ -3,6 +3,7 @@ import { Output, streamText } from "ai";
 import sharp from "sharp";
 import { LiveFeedbackSchema } from "@/lib/schemas";
 import { buildSystemPrompt } from "@/lib/prompts";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -17,17 +18,17 @@ export async function POST(request: Request) {
   const mediaType = header.match(/:(.*?);/)?.[1];
 
   if (!base64Data || !mediaType) {
-    console.error("[analyze-stream] invalid image format — missing base64 data or media type");
+    logger.error("[analyze-stream] invalid image format — missing base64 data or media type");
     return Response.json({ error: "Invalid image format" }, { status: 400 });
   }
 
   if (!["image/jpeg", "image/png", "image/webp"].includes(mediaType)) {
-    console.error("[analyze-stream] unsupported media type", { mediaType });
+    logger.error("[analyze-stream] unsupported media type", { mediaType });
     return Response.json({ error: "Unsupported image type" }, { status: 415 });
   }
 
   const imageBuffer = await sharp(Buffer.from(base64Data, "base64")).toBuffer();
-  console.log("[analyze-stream] dispatching frame", {
+  logger.info("[analyze-stream] dispatching frame", {
     mediaType,
     exercise: exercise ?? null,
     targetMuscles: targetMuscles ?? null,

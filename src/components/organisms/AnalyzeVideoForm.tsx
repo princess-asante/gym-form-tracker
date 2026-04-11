@@ -8,7 +8,8 @@ import { VideoFormFeedbackSchema } from "@/lib/schemas";
 import FeedbackPanel from "@/components/organisms/FeedbackPanel";
 import Button from "@/components/atoms/Button";
 import VideoDropzone from "../molecules/VideoDropzone";
-import WorkoutSelector, { type Exercise, type Muscle } from "@/components/molecules/WorkoutSelector";
+import WorkoutSelector from "@/components/molecules/WorkoutSelector";
+import { type Exercise, type Muscle } from "@/lib/constants";
 
 type Phase = "uploading" | "analyzing" | "idle";
 

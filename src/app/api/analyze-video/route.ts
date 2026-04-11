@@ -4,6 +4,7 @@ import { del } from "@vercel/blob";
 import { after } from "next/server";
 import { VideoFormFeedbackSchema } from "@/lib/schemas";
 import { buildSystemPrompt } from "@/lib/prompts";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     blobRes = await fetch(blobUrl);
     if (blobRes.ok) break;
     if (blobRes.status !== 404) {
-      console.error("[analyze-video] blob fetch failed", {
+      logger.error("[analyze-video] blob fetch failed", {
         blobUrl,
         status: blobRes.status,
       });
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     }
   }
   if (!blobRes || !blobRes.ok || !blobRes.body) {
-    console.error("[analyze-video] blob fetch failed after retries", {
+    logger.error("[analyze-video] blob fetch failed after retries", {
       blobUrl,
       status: blobRes?.status,
     });
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 
   const contentLength = blobRes.headers.get("content-length");
   if (!contentLength) {
-    console.error("[analyze-video] blob response missing content-length", {
+    logger.error("[analyze-video] blob response missing content-length", {
       blobUrl,
     });
     return Response.json(
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
 
   if (!initiateRes.ok) {
     const error = await initiateRes.text();
-    console.error("[analyze-video] Gemini upload initiation failed", {
+    logger.error("[analyze-video] Gemini upload initiation failed", {
       status: initiateRes.status,
       error,
     });
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
 
   const uploadUrl = initiateRes.headers.get("X-Goog-Upload-URL");
   if (!uploadUrl) {
-    console.error("[analyze-video] Gemini did not return an upload URL");
+    logger.error("[analyze-video] Gemini did not return an upload URL");
     return Response.json(
       { error: "Gemini did not return an upload URL" },
       { status: 502 },
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
 
   if (!uploadRes.ok) {
     const error = await uploadRes.text();
-    console.error("[analyze-video] Gemini byte upload failed", {
+    logger.error("[analyze-video] Gemini byte upload failed", {
       status: uploadRes.status,
       error,
     });
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
   let activeFile = file;
   while (activeFile.state !== "ACTIVE") {
     if (activeFile.state === "FAILED") {
-      console.error("[analyze-video] Gemini file processing failed", {
+      logger.error("[analyze-video] Gemini file processing failed", {
         fileName: activeFile.name,
       });
       return Response.json(
@@ -142,7 +143,7 @@ export async function POST(request: Request) {
       `https://generativelanguage.googleapis.com/v1beta/${activeFile.name}?key=${apiKey}`,
     );
     if (!pollRes.ok) {
-      console.error("[analyze-video] Gemini file poll failed", {
+      logger.error("[analyze-video] Gemini file poll failed", {
         status: pollRes.status,
         fileName: activeFile.name,
       });

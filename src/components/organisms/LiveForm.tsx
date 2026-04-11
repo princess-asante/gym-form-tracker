@@ -5,10 +5,8 @@ import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { LiveFeedbackSchema, type LiveFeedback } from "@/lib/schemas";
 import CameraPreview from "@/components/molecules/CameraPreview";
 import LiveFeedbackDisplay from "@/components/molecules/LiveFeedbackDisplay";
-import WorkoutSelector, {
-  type Exercise,
-  type Muscle,
-} from "@/components/molecules/WorkoutSelector";
+import WorkoutSelector from "@/components/molecules/WorkoutSelector";
+import { type Exercise, type Muscle } from "@/lib/constants";
 import Button from "@/components/atoms/Button";
 
 const CAPTURE_INTERVAL_MS = 5000;
