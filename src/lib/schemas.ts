@@ -82,7 +82,6 @@ export const LiveFeedbackSchema = z.object({
         severity: z.enum(['low', 'medium', 'high']),
       })
     )
-    .max(2)
     .describe('Up to 2 form corrections, ordered by severity descending'),
   positive: z
     .string()

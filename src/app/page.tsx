@@ -3,8 +3,9 @@
 import { useState } from "react";
 import AnalyzeForm from "@/components/organisms/AnalyzeForm";
 import AnalyzeVideoForm from "@/components/organisms/AnalyzeVideoForm";
+import LiveForm from "@/components/organisms/LiveForm";
 
-type Tab = "image" | "video";
+type Tab = "image" | "video" | "live";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("image");
@@ -24,7 +25,7 @@ export default function Home() {
         </header>
 
         <div className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-800">
-          {(["image", "video"] as Tab[]).map((tab) => (
+          {(["image", "video", "live"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -40,7 +41,9 @@ export default function Home() {
           ))}
         </div>
 
-        {activeTab === "image" ? <AnalyzeForm /> : <AnalyzeVideoForm />}
+        {activeTab === "image" && <AnalyzeForm />}
+        {activeTab === "video" && <AnalyzeVideoForm />}
+        {activeTab === "live" && <LiveForm />}
       </div>
     </main>
   );
