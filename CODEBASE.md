@@ -98,3 +98,21 @@ Added as a third tab alongside image and video.
 - **Waiting state** — while the session is active but no result has arrived yet, a "Waiting for first analysis…" message is shown instead of nothing
 - **Functional state update in `stopSession`** — `setStream(current => ...)` used to call `track.stop()` on the live value rather than a stale closure capture
 - **Unmount cleanup** — a `useEffect` keyed on `stream` stops camera tracks when the component unmounts, turning off the browser camera indicator
+- **Unrecognised timeout** — if `recognised: false` persists for 30 seconds, `stopSession` is called automatically and a red error message is shown. The 30s clock starts on the first unrecognised result and is cancelled immediately if a recognised result arrives. Only one timeout runs at a time.
+
+---
+
+## Decisions
+
+### Why periodic frame capture instead of short video clips for live feedback
+Considered using `MediaRecorder` to send 3-second clips to the Gemini video pipeline instead of JPEG frames to Claude. Rejected because:
+- Claude only accepts images, not video — clips would require switching to Gemini's Files API
+- The Gemini pipeline (upload → transcode poll → analyse) adds 5–8s latency on top of the clip duration, meaning feedback arrives 8–10s after the moment it describes
+- JPEG frames via Claude return in ~2s, which is responsive enough for mid-rep coaching
+- The tradeoff (no temporal context) is acceptable for live use; temporal context is better suited to the post-set video review flow already in the video tab
+
+### Why `recognised` is a boolean field rather than filtering on empty `cues`
+Empty `cues` is ambiguous — it could mean "form is fine" or "no exercise detected". A dedicated `recognised` field makes the model's intent explicit and lets the UI show the right message in each case. It also prevents the unrecognised timeout from firing when the user is simply exercising with good form.
+
+### Why `maxItems` was removed from `LiveFeedbackSchema`
+Anthropic's structured output API does not support `maxItems` in JSON Schema. The constraint is enforced via the prompt instruction instead ("Return at most 2 cues"). This is a general limitation — `minItems`, `maxLength`, `minimum`, `maximum` are also unsupported; shape is defined by the schema, quantity limits by the prompt.

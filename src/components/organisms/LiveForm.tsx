@@ -24,6 +24,7 @@ const LiveForm = () => {
   const [exercise, setExercise] = useState<Exercise | "">("");
   const [targetMuscles, setTargetMuscles] = useState<Muscle[]>([]);
   const [stopReason, setStopReason] = useState<string | null>(null);
+  const [debugFrame, setDebugFrame] = useState<string | null>(null);
 
   // --- refs ---
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -107,6 +108,7 @@ const LiveForm = () => {
       canvas.getContext("2d")?.drawImage(video, 0, 0);
 
       const image = canvas.toDataURL("image/jpeg", 0.8);
+      setDebugFrame(image);
       isAnalysingRef.current = true;
       submit({
         image,
@@ -156,6 +158,13 @@ const LiveForm = () => {
         <p className="text-sm text-red-500 text-center">
           {stopReason}
         </p>
+      )}
+
+      {debugFrame && (
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">Debug: last captured frame</p>
+          <img src={debugFrame} alt="Last captured frame" className="w-full rounded-xl" />
+        </div>
       )}
     </div>
   );
