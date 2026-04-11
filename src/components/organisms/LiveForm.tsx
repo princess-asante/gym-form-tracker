@@ -23,18 +23,35 @@ const LiveForm = () => {
   >(undefined);
   const [exercise, setExercise] = useState<Exercise | "">("");
   const [targetMuscles, setTargetMuscles] = useState<Muscle[]>([]);
+  const [stopReason, setStopReason] = useState<string | null>(null);
 
   // --- refs ---
   const videoRef = useRef<HTMLVideoElement>(null);
   const isAnalysingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const unrecognisedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- AI ---
   const { submit } = useObject({
     api: "/api/analyze-stream",
     schema: LiveFeedbackSchema,
     onFinish: ({ object }) => {
-      if (object) setDisplayFeedback(object);
+      if (object) {
+        setDisplayFeedback(object);
+        if (object.recognised) {
+          // Exercise detected — cancel any pending unrecognised timeout
+          if (unrecognisedTimeoutRef.current) {
+            clearTimeout(unrecognisedTimeoutRef.current);
+            unrecognisedTimeoutRef.current = null;
+          }
+        } else if (!unrecognisedTimeoutRef.current) {
+          // Start the 30s clock only if one isn't already running
+          unrecognisedTimeoutRef.current = setTimeout(() => {
+            setStopReason("We couldn't recognise a workout. Stopping live session.");
+            stopSession();
+          }, 30_000);
+        }
+      }
       isAnalysingRef.current = false;
     },
     onError: () => {
@@ -45,6 +62,7 @@ const LiveForm = () => {
   // --- session control ---
   const startSession = async () => {
     setPermissionError(false);
+    setStopReason(null);
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -63,6 +81,10 @@ const LiveForm = () => {
       return null;
     });
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (unrecognisedTimeoutRef.current) {
+      clearTimeout(unrecognisedTimeoutRef.current);
+      unrecognisedTimeoutRef.current = null;
+    }
     isAnalysingRef.current = false;
     setDisplayFeedback(undefined);
   };
@@ -128,7 +150,13 @@ const LiveForm = () => {
         </Button>
       </div>
 
-      {displayFeedback && <LiveFeedbackDisplay feedback={displayFeedback} />}
+      {isSessionActive && <LiveFeedbackDisplay feedback={displayFeedback} />}
+
+      {stopReason && (
+        <p className="text-sm text-red-500 text-center">
+          {stopReason}
+        </p>
+      )}
     </div>
   );
 };

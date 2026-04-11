@@ -75,6 +75,9 @@ export const VideoFormFeedbackSchema = FormFeedbackSchema.extend({
 export type VideoFormFeedback = z.infer<typeof VideoFormFeedbackSchema>
 
 export const LiveFeedbackSchema = z.object({
+  recognised: z
+    .boolean()
+    .describe('Whether an exercise movement is visible and recognisable in the frame. False if the person is just standing, sitting, out of frame, or no workout is happening.'),
   cues: z
     .array(
       z.object({
@@ -82,11 +85,11 @@ export const LiveFeedbackSchema = z.object({
         severity: z.enum(['low', 'medium', 'high']),
       })
     )
-    .describe('Up to 2 form corrections, ordered by severity descending'),
+    .describe('Up to 2 form corrections, ordered by severity descending. Empty if recognised is false.'),
   positive: z
     .string()
     .optional()
-    .describe('One short positive observation, max 6 words. Omit if nothing notable.'),
+    .describe('One short positive observation, max 6 words. Omit if nothing notable or if recognised is false.'),
 })
 
 export type LiveFeedback = z.infer<typeof LiveFeedbackSchema>

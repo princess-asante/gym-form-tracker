@@ -12,14 +12,29 @@ const borderBySeverity = {
 };
 
 const LiveFeedbackDisplay = ({ feedback }: LiveFeedbackDisplayProps) => {
-  if (!feedback) return null;
+  if (!feedback) {
+    return (
+      <p className="text-sm text-zinc-400 dark:text-zinc-500 text-center">
+        No feedback yet
+      </p>
+    );
+  }
 
-  const { cues, positive } = feedback;
+  const { recognised, cues, positive } = feedback;
+
+  if (!recognised) {
+    return (
+      <p className="text-sm text-zinc-400 dark:text-zinc-500 text-center">
+        No exercise detected — get into position to receive feedback
+      </p>
+    );
+  }
+
   const hasCues = cues.length > 0;
 
   return (
     <div className="flex flex-col gap-3">
-      {hasCues ? (
+      {hasCues &&
         cues.map((cue, i) => (
           <div
             key={i}
@@ -30,14 +45,7 @@ const LiveFeedbackDisplay = ({ feedback }: LiveFeedbackDisplayProps) => {
             </p>
             <Badge severity={cue.severity} />
           </div>
-        ))
-      ) : (
-        <div className="flex items-center gap-2 border-l-2 border-emerald-500 pl-3 py-1">
-          <p className="text-base font-semibold text-zinc-800 dark:text-zinc-100">
-            Looking good
-          </p>
-        </div>
-      )}
+        ))}
 
       {positive && (
         <p className="text-sm text-emerald-600 dark:text-emerald-400">

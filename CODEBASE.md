@@ -86,7 +86,7 @@ Added as a third tab alongside image and video.
 |---|---|
 | `src/app/api/analyze-stream/route.ts` | Accepts a base64 frame, sends to Claude Sonnet, streams `LiveFeedbackSchema` back — same pattern as `analyze-photo` but with the lean schema |
 | `src/components/molecules/CameraPreview.tsx` | Renders the camera stream in three states: idle, active (with pulsing live indicator), permission denied. Uses `forwardRef` to expose the `<video>` element for canvas capture. Video is CSS-mirrored for the user; canvas reads the raw unmirrored frame. |
-| `src/components/molecules/LiveFeedbackDisplay.tsx` | Renders a completed `LiveFeedback` object — up to 2 coloured cues with severity badges, optional positive. Never receives partial data. |
+| `src/components/molecules/LiveFeedbackDisplay.tsx` | Renders a completed `LiveFeedback` object — up to 2 coloured cues with severity badges, optional positive. Never receives partial data. Empty `cues` renders nothing; "Looking good" only appears if the model explicitly populates the `positive` field. |
 | `src/components/organisms/LiveForm.tsx` | Owns the full session lifecycle: `getUserMedia`, capture interval, anti-double-dispatch guard, `useObject` wired to `analyze-stream`. |
 
 ### New schemas
@@ -95,5 +95,6 @@ Added as a third tab alongside image and video.
 ### Key patterns in LiveForm
 - **Anti-double-dispatch** — `isAnalysingRef` (a `useRef`, not state) blocks the interval from firing a new request while one is in-flight
 - **Stable display** — `displayFeedback` state is only updated in `onFinish`, never mid-stream. The previous complete result stays visible until the next one is fully ready.
+- **Waiting state** — while the session is active but no result has arrived yet, a "Waiting for first analysis…" message is shown instead of nothing
 - **Functional state update in `stopSession`** — `setStream(current => ...)` used to call `track.stop()` on the live value rather than a stale closure capture
 - **Unmount cleanup** — a `useEffect` keyed on `stream` stops camera tracks when the component unmounts, turning off the browser camera indicator
