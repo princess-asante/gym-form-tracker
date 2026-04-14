@@ -1,15 +1,17 @@
 interface AnalysisContext {
   exercise?: string;
   targetMuscles?: string[];
+  trainingGoal?: string;
 }
 
 export const buildSystemPrompt = (
   mediaLabel: "image" | "video clip" | "live frame",
-  { exercise, targetMuscles }: AnalysisContext = {},
+  { exercise, targetMuscles, trainingGoal }: AnalysisContext = {},
 ): string => {
   const contextLine = [
     exercise ? `The exercise being performed is: ${exercise}.` : "",
     targetMuscles?.length ? `The user is focusing on targeting: ${targetMuscles.join(", ")}.` : "",
+    trainingGoal ? `Their training goal is: ${trainingGoal}.` : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -35,5 +37,7 @@ Rules:
 - For positives: explain what the person is doing well and why it is beneficial — this helps reinforce good habits
 - Severity guide: high = risk of immediate injury, medium = risk of long-term injury or wasted effort over time, low = a small improvement that would help
 - Use plain, everyday language: say "lower back" not "lumbar spine", "kneecap" not "patella", "thigh muscles" not "posterior chain". Avoid anatomical Latin terms entirely unless there is no simpler alternative
-- If you cannot clearly see enough of the body to assess a point, leave it out rather than guessing${mediaLabel === "video clip" ? '\n- Where a specific moment in the video illustrates a point, include a timestamp in m:ss format (e.g. "0:03")' : ""}`;
+- If you cannot clearly see enough of the body to assess a point, leave it out rather than guessing${mediaLabel === "video clip" ? '\n- Where a specific moment in the video illustrates a point, include a timestamp in m:ss format (e.g. "0:03")' : ""}
+- score: rate the overall form quality from 1 to 10. 10 = competition-ready technique, 7 = solid with minor refinements needed, 4 = significant issues affecting safety or results, 1 = unsafe. Base the score primarily on injury risk, then efficiency.
+- topCue: give the single most impactful correction as a direct coaching instruction the person can act on immediately. Max 20 words. Write it as a cue you would say mid-set, not a diagnosis.`;
 };

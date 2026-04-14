@@ -64,6 +64,7 @@ export default function AnalyzeForm() {
   const fileRef = useRef<File | null>(null);
 
   const [uploadPhase, setUploadPhase] = useState<UploadPhase>("idle");
+  const [showFeedback, setShowFeedback] = useState(false);
   const [exercise, setExercise] = useState("");
   const [targetMuscles, setTargetMuscles] = useState("");
   const [trainingGoal, setTrainingGoal] = useState("");
@@ -149,6 +150,7 @@ export default function AnalyzeForm() {
 
   function handleAnalyze() {
     if (!fileUrl || !file) return;
+    setShowFeedback(true);
 
     if (isVideo) {
       submitVideo({});
@@ -206,8 +208,12 @@ export default function AnalyzeForm() {
         )}
       </div>
 
-      {(hasResult || isLoading) && (
-        <FeedbackPanel feedback={activeObject ?? {}} isLoading={isLoading} />
+      {showFeedback && (hasResult || isLoading) && (
+        <FeedbackPanel
+          feedback={activeObject ?? {}}
+          isLoading={isLoading}
+          onClose={() => setShowFeedback(false)}
+        />
       )}
     </div>
   );

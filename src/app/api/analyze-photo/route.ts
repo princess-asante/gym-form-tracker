@@ -8,10 +8,11 @@ import { errorResponse } from "@/lib/api";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const { image, exercise, targetMuscles } = (await request.json()) as {
+  const { image, exercise, targetMuscles, trainingGoal } = (await request.json()) as {
     image: string;
     exercise?: string;
     targetMuscles?: string[];
+    trainingGoal?: string;
   };
 
   const [header, base64Data] = (image as string).split(",");
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
   const result = streamText({
     model: anthropic("claude-sonnet-4-6"),
     output: Output.object({ schema: FormFeedbackSchema }),
-    system: buildSystemPrompt("image", { exercise, targetMuscles }),
+    system: buildSystemPrompt("image", { exercise, targetMuscles, trainingGoal }),
 
     messages: [
       {

@@ -28,7 +28,9 @@ const LiveForm = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const isAnalysingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const unrecognisedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unrecognisedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   // --- AI ---
   const { submit } = useObject({
@@ -46,7 +48,9 @@ const LiveForm = () => {
         } else if (!unrecognisedTimeoutRef.current) {
           // Start the 30s clock only if one isn't already running
           unrecognisedTimeoutRef.current = setTimeout(() => {
-            setStopReason("We couldn't recognise a workout. Stopping live session.");
+            setStopReason(
+              "We couldn't recognise a workout. Stopping live session.",
+            );
             stopSession();
           }, 30_000);
         }
@@ -137,15 +141,18 @@ const LiveForm = () => {
           permissionError={permissionError}
         />
 
-        <WorkoutSelector
+        {/* <WorkoutSelector
           exercise={exercise}
           targetMuscles={targetMuscles}
           onExerciseChange={setExercise}
           onMusclesChange={setTargetMuscles}
           disabled={isSessionActive}
-        />
+        /> */}
 
-        <Button onClick={isSessionActive ? stopSession : startSession} className="w-full">
+        <Button
+          onClick={isSessionActive ? stopSession : startSession}
+          className="w-full"
+        >
           {isSessionActive ? "Stop session" : "Start session"}
         </Button>
       </div>
@@ -153,15 +160,19 @@ const LiveForm = () => {
       {isSessionActive && <LiveFeedbackDisplay feedback={displayFeedback} />}
 
       {stopReason && (
-        <p className="text-sm text-red-500 text-center">
-          {stopReason}
-        </p>
+        <p className="text-sm text-red-500 text-center">{stopReason}</p>
       )}
 
       {debugFrame && (
         <div className="flex flex-col gap-1">
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">Debug: last captured frame</p>
-          <img src={debugFrame} alt="Last captured frame" className="w-full rounded-xl" />
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            Debug: last captured frame
+          </p>
+          <img
+            src={debugFrame}
+            alt="Last captured frame"
+            className="w-full rounded-xl"
+          />
         </div>
       )}
     </div>

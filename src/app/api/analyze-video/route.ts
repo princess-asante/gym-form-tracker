@@ -12,11 +12,12 @@ const GEMINI_UPLOAD_URL =
   "https://generativelanguage.googleapis.com/upload/v1beta/files";
 
 export async function POST(request: Request) {
-  const { blobUrl, mediaType, exercise, targetMuscles } = (await request.json()) as {
+  const { blobUrl, mediaType, exercise, targetMuscles, trainingGoal } = (await request.json()) as {
     blobUrl: string;
     mediaType: string;
     exercise?: string;
     targetMuscles?: string[];
+    trainingGoal?: string;
   };
 
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -165,7 +166,7 @@ export async function POST(request: Request) {
   const result = streamText({
     model: google("gemini-2.5-flash-lite"),
     output: Output.object({ schema: VideoFormFeedbackSchema }),
-    system: buildSystemPrompt("video clip", { exercise, targetMuscles }),
+    system: buildSystemPrompt("video clip", { exercise, targetMuscles, trainingGoal }),
     messages: [
       {
         role: "user",
