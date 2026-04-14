@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import AnalyzeForm from "@/components/organisms/AnalyzeForm";
 import LiveForm from "@/components/organisms/LiveForm";
 
@@ -17,29 +18,27 @@ export default function Home() {
   return (
     <main className="flex flex-col items-center px-5 py-10 sm:px-8 min-h-screen bg-[#0d0d0f]">
       <div className="w-full sm:max-w-xl flex flex-col gap-7">
-
         {/* Brand */}
         <div className="flex items-center gap-2">
-          <div className="flex size-6 items-center justify-center">
-            {/* Lightning bolt / coach icon */}
-            <svg viewBox="0 0 24 24" fill="none" className="size-5 text-zinc-100" aria-hidden="true">
-              <path
-                d="M13 2L4.5 13.5H11.5L11 22L19.5 10.5H12.5L13 2Z"
-                fill="currentColor"
-                stroke="currentColor"
-                strokeWidth="0.5"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <span className="text-sm font-semibold tracking-tight text-zinc-100">FormCheck</span>
+          <Image
+            src="/favicon.ico"
+            alt=""
+            width={20}
+            height={20}
+            aria-hidden="true"
+          />
+          <span className="text-sm font-semibold tracking-tight text-zinc-100">
+            FormCheck
+          </span>
         </div>
 
         {/* Hero */}
         <div className="flex flex-col gap-5">
           <h1 className="text-3xl font-semibold leading-snug tracking-tight text-zinc-50">
-            Your <em className="not-italic font-semibold italic">personal coach</em>
-            <br />on your phone.
+            Your{" "}
+            <em className="not-italic font-semibold italic">personal coach</em>
+            <br />
+            on your phone.
           </h1>
 
           {/* Tab switcher */}

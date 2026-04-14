@@ -20,39 +20,6 @@ function StepLabel({ step, title }: { step: number; title: string }) {
   );
 }
 
-function FeedbackPreview() {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-4 py-3 text-left"
-      >
-        <span className="size-1.5 rounded-full bg-zinc-500 shrink-0" aria-hidden="true" />
-        <span className="flex-1 text-sm text-zinc-400">See what feedback looks like</span>
-        <span className="text-xs font-medium text-zinc-500">{open ? "Hide" : "Show"}</span>
-      </button>
-      {open && (
-        <div className="px-4 pb-4 flex flex-col gap-2">
-          <div className="rounded-lg bg-zinc-800 px-3 py-2.5 flex flex-col gap-1">
-            <p className="text-xs font-semibold text-emerald-400">Good: Hip hinge depth</p>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Your hip hinge depth is correct — hips are tracking behind your heels at the bottom.
-            </p>
-          </div>
-          <div className="rounded-lg bg-zinc-800 px-3 py-2.5 flex flex-col gap-1">
-            <p className="text-xs font-semibold text-amber-400">Fix: Knee cave on left side</p>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Your left knee is collapsing inward during the concentric. Cue: drive your knee out over your pinky toe.
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── main form ───────────────────────────────────────────────────────────────
 
 type UploadPhase = "idle" | "uploading" | "analyzing";
@@ -79,7 +46,8 @@ export default function AnalyzeForm() {
   } = useObject({
     api: "/api/analyze-photo",
     schema: FormFeedbackSchema,
-    onError: (err) => logger.error("photo analysis failed", { message: err.message }),
+    onError: (err) =>
+      logger.error("photo analysis failed", { message: err.message }),
   });
 
   // ── video path ──────────────────────────────────────────────────────────
@@ -110,7 +78,10 @@ export default function AnalyzeForm() {
           mediaType: f.type,
           exercise: exercise || undefined,
           targetMuscles: targetMuscles
-            ? targetMuscles.split(",").map((m) => m.trim()).filter(Boolean)
+            ? targetMuscles
+                .split(",")
+                .map((m) => m.trim())
+                .filter(Boolean)
             : undefined,
           trainingGoal: trainingGoal || undefined,
         }),
@@ -159,7 +130,10 @@ export default function AnalyzeForm() {
         image: fileUrl,
         exercise: exercise || undefined,
         targetMuscles: targetMuscles
-          ? targetMuscles.split(",").map((m) => m.trim()).filter(Boolean)
+          ? targetMuscles
+              .split(",")
+              .map((m) => m.trim())
+              .filter(Boolean)
           : undefined,
         trainingGoal: trainingGoal || undefined,
       });
@@ -169,8 +143,13 @@ export default function AnalyzeForm() {
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-5 w-full">
-      <FeedbackPreview />
-
+      {showFeedback && (hasResult || isLoading) && (
+        <FeedbackPanel
+          feedback={activeObject ?? {}}
+          isLoading={isLoading}
+          onClose={() => setShowFeedback(false)}
+        />
+      )}
       <div className="flex flex-col gap-2">
         <StepLabel step={1} title="Your footage" />
         <UploadDropzone
@@ -202,19 +181,15 @@ export default function AnalyzeForm() {
         </Button>
 
         {fileUrl && !isLoading && (
-          <Button variant="ghost" onClick={handleClear} aria-label="Remove file">
+          <Button
+            variant="ghost"
+            onClick={handleClear}
+            aria-label="Remove file"
+          >
             Clear
           </Button>
         )}
       </div>
-
-      {showFeedback && (hasResult || isLoading) && (
-        <FeedbackPanel
-          feedback={activeObject ?? {}}
-          isLoading={isLoading}
-          onClose={() => setShowFeedback(false)}
-        />
-      )}
     </div>
   );
 }
