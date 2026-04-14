@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gym Form Tracker",
-  description: "Track and improve your exercise form with AI analysis",
+  title: "FormCheck",
+  description: "Your personal coach on your phone. Get specific, actionable form feedback.",
 };
 
 export default function RootLayout({

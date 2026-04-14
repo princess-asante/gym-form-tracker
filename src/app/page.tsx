@@ -2,47 +2,71 @@
 
 import { useState } from "react";
 import AnalyzeForm from "@/components/organisms/AnalyzeForm";
-import AnalyzeVideoForm from "@/components/organisms/AnalyzeVideoForm";
 import LiveForm from "@/components/organisms/LiveForm";
 
-type Tab = "image" | "video" | "live";
+type Tab = "upload" | "live";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<Tab>("image");
+  const [activeTab, setActiveTab] = useState<Tab>("upload");
+
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "upload", label: "Upload Video" },
+    { id: "live", label: "Live Session" },
+  ];
 
   return (
-    <main className="flex flex-col items-center px-4 py-12 sm:px-8">
-      <div className="w-full max-w-xl flex flex-col gap-6">
-        <header className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Gym Form Tracker
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Upload a photo or video of your exercise and get instant form
-            feedback. You can also optionally add the exercise you're doing and
-            the muscles you're targeting to get more tailored advice!
-          </p>
-        </header>
+    <main className="flex flex-col items-center px-5 py-10 sm:px-8 min-h-screen bg-[#0d0d0f]">
+      <div className="w-full sm:max-w-xl flex flex-col gap-7">
 
-        <div className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-800">
-          {(["image", "video", "live"] as Tab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={[
-                "flex-1 rounded-full py-2 text-sm font-medium transition-colors capitalize",
-                activeTab === tab
-                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-50"
-                  : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200",
-              ].join(" ")}
-            >
-              {tab}
-            </button>
-          ))}
+        {/* Brand */}
+        <div className="flex items-center gap-2">
+          <div className="flex size-6 items-center justify-center">
+            {/* Lightning bolt / coach icon */}
+            <svg viewBox="0 0 24 24" fill="none" className="size-5 text-zinc-100" aria-hidden="true">
+              <path
+                d="M13 2L4.5 13.5H11.5L11 22L19.5 10.5H12.5L13 2Z"
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth="0.5"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <span className="text-sm font-semibold tracking-tight text-zinc-100">FormCheck</span>
         </div>
 
-        {activeTab === "image" && <AnalyzeForm />}
-        {activeTab === "video" && <AnalyzeVideoForm />}
+        {/* Hero */}
+        <div className="flex flex-col gap-5">
+          <h1 className="text-3xl font-semibold leading-snug tracking-tight text-zinc-50">
+            Your <em className="not-italic font-semibold italic">personal coach</em>
+            <br />on your phone.
+          </h1>
+
+          {/* Tab switcher */}
+          <div className="flex rounded-full bg-zinc-900 border border-zinc-800 p-1 gap-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={[
+                  "flex-1 rounded-full py-2 text-sm font-medium transition-all",
+                  activeTab === tab.id
+                    ? "bg-zinc-100 text-zinc-900 shadow-sm"
+                    : "text-zinc-400 hover:text-zinc-200",
+                ].join(" ")}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <p className="text-sm text-zinc-400 leading-relaxed">
+            Upload a photo or video. Get specific, actionable form feedback.
+          </p>
+        </div>
+
+        {/* Active tab content */}
+        {activeTab === "upload" && <AnalyzeForm />}
         {activeTab === "live" && <LiveForm />}
       </div>
     </main>
