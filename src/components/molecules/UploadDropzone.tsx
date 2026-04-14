@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect, DragEvent, ChangeEvent } from "react";
 import Image from "next/image";
-
 const ACCEPTED_IMAGES = ["image/jpeg", "image/png", "image/webp"];
 const ACCEPTED_VIDEOS = ["video/mp4", "video/quicktime"];
 const ACCEPTED_TYPES = [...ACCEPTED_IMAGES, ...ACCEPTED_VIDEOS];
@@ -23,15 +22,28 @@ export default function UploadDropzone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Reset video flag when parent clears the value
   useEffect(() => {
     if (!fileUrl) setIsVideo(false);
   }, [fileUrl]);
 
+  const VIDEO_SIZE_LIMIT = 50 * 1024 * 1024; // 50 MB — Vercel Blob hard cap
+
   function processFile(file: File) {
     if (!ACCEPTED_TYPES.includes(file.type)) return;
+
+    // Derive synchronously — don't read isVideo state, it's stale here
     const asVideo = ACCEPTED_VIDEOS.includes(file.type);
+    if (asVideo && file.size > VIDEO_SIZE_LIMIT) {
+      setError(
+        `Video is too large (${(file.size / 1024 / 1024).toFixed(0)} MB). Maximum is 50 MB.`,
+      );
+      return;
+    }
+
+    setError(null);
     setIsVideo(asVideo);
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -55,7 +67,10 @@ export default function UploadDropzone({
 
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
-    if (!disabled) setIsDragging(true);
+    if (!disabled) {
+      setIsDragging(true);
+      setError(null);
+    }
   }
 
   return (
@@ -66,7 +81,9 @@ export default function UploadDropzone({
       className={[
         "relative flex flex-col items-center justify-center w-full rounded-2xl border-2 border-dashed transition-colors overflow-hidden min-h-52",
         disabled ? "opacity-50 cursor-not-allowed" : "cursor-default",
-        isDragging ? "border-zinc-500 bg-zinc-800" : "border-zinc-700 bg-zinc-900",
+        isDragging
+          ? "border-zinc-500 bg-zinc-800"
+          : "border-zinc-700 bg-zinc-900",
       ].join(" ")}
     >
       <input
@@ -115,18 +132,28 @@ export default function UploadDropzone({
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium text-zinc-200">Drop your photo or video</p>
-            <p className="text-xs text-zinc-500">JPEG · PNG · WebP · MP4 · MOV</p>
+            <p className="text-sm font-medium text-zinc-200">
+              Drop your photo or video
+            </p>
+            <p className="text-xs text-zinc-500">
+              JPEG · PNG · WebP · MP4 · MOV
+            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => !disabled && inputRef.current?.click()}
-            disabled={disabled}
-            className="pointer-events-auto rounded-full border border-zinc-700 bg-zinc-800 px-4 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-700 hover:border-zinc-600 disabled:cursor-not-allowed"
-          >
-            Browse files
-          </button>
+          {error ? (
+            <p className="pointer-events-none text-xs text-red-400 text-center">
+              {error}
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => !disabled && inputRef.current?.click()}
+              disabled={disabled}
+              className="pointer-events-auto rounded-full border border-zinc-700 bg-zinc-800 px-4 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-700 hover:border-zinc-600 disabled:cursor-not-allowed"
+            >
+              Browse files
+            </button>
+          )}
         </div>
       )}
     </div>
