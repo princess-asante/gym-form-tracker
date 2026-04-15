@@ -181,11 +181,7 @@ export default function AnalyzeForm() {
         </Button>
 
         {fileUrl && !isLoading && (
-          <Button
-            variant="ghost"
-            onClick={handleClear}
-            aria-label="Remove file"
-          >
+          <Button variant="ghost" onClick={handleClear} aria-label="Remove file">
             Clear
           </Button>
         )}
