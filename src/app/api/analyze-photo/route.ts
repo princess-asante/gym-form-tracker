@@ -4,16 +4,36 @@ import sharp from "sharp";
 import { FormFeedbackSchema } from "@/lib/schemas";
 import { buildSystemPrompt } from "@/lib/prompts";
 import { errorResponse } from "@/lib/api";
+import { FIELD_MAX_LENGTHS } from "@/lib/constants";
+import { photoLimiter } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const sessionId = request.headers.get("x-session-id");
+  if (!sessionId) {
+    return errorResponse("Missing session", 400);
+  }
+
+  const { success, reset } = await photoLimiter.limit(sessionId);
+  if (!success) {
+    const retryAfter = Math.floor((reset - Date.now()) / 1000);
+    return errorResponse("Too many requests", 429, { "Retry-After": String(retryAfter) });
+  }
+
   const { image, exercise, targetMuscles, trainingGoal } = (await request.json()) as {
     image: string;
     exercise?: string;
     targetMuscles?: string[];
     trainingGoal?: string;
   };
+
+  if (exercise && exercise.length > FIELD_MAX_LENGTHS.exercise)
+    return errorResponse("exercise field exceeds maximum length", 400);
+  if (trainingGoal && trainingGoal.length > FIELD_MAX_LENGTHS.trainingGoal)
+    return errorResponse("trainingGoal field exceeds maximum length", 400);
+  if (targetMuscles?.some((m) => m.length > FIELD_MAX_LENGTHS.targetMuscles))
+    return errorResponse("targetMuscles field exceeds maximum length", 400);
 
   const [header, base64Data] = (image as string).split(",");
   const mediaType = header.match(/:(.*?);/)?.[1];

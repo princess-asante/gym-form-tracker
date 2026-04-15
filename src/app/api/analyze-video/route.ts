@@ -5,6 +5,9 @@ import { after } from "next/server";
 import { VideoFormFeedbackSchema } from "@/lib/schemas";
 import { buildSystemPrompt } from "@/lib/prompts";
 import { logger } from "@/lib/logger";
+import { FIELD_MAX_LENGTHS } from "@/lib/constants";
+import { videoLimiter } from "@/lib/ratelimit";
+import { errorResponse } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +15,17 @@ const GEMINI_UPLOAD_URL =
   "https://generativelanguage.googleapis.com/upload/v1beta/files";
 
 export async function POST(request: Request) {
+  const sessionId = request.headers.get("x-session-id");
+  if (!sessionId) {
+    return errorResponse("Missing session", 400);
+  }
+
+  const { success, reset } = await videoLimiter.limit(sessionId);
+  if (!success) {
+    const retryAfter = Math.floor((reset - Date.now()) / 1000);
+    return errorResponse("Too many requests", 429, { "Retry-After": String(retryAfter) });
+  }
+
   const { blobUrl, mediaType, exercise, targetMuscles, trainingGoal } = (await request.json()) as {
     blobUrl: string;
     mediaType: string;
@@ -19,6 +33,13 @@ export async function POST(request: Request) {
     targetMuscles?: string[];
     trainingGoal?: string;
   };
+
+  if (exercise && exercise.length > FIELD_MAX_LENGTHS.exercise)
+    return Response.json({ error: "exercise field exceeds maximum length" }, { status: 400 });
+  if (trainingGoal && trainingGoal.length > FIELD_MAX_LENGTHS.trainingGoal)
+    return Response.json({ error: "trainingGoal field exceeds maximum length" }, { status: 400 });
+  if (targetMuscles?.some((m) => m.length > FIELD_MAX_LENGTHS.targetMuscles))
+    return Response.json({ error: "targetMuscles field exceeds maximum length" }, { status: 400 });
 
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 

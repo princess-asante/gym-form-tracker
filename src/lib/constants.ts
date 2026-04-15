@@ -1,3 +1,9 @@
+export const FIELD_MAX_LENGTHS = {
+  exercise: 100,
+  targetMuscles: 100,
+  trainingGoal: 150,
+} as const;
+
 export const EXERCISES = [
   "Squat",
   "Deadlift",

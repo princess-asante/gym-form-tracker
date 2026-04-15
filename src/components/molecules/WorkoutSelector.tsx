@@ -1,5 +1,7 @@
 "use client";
 
+import { FIELD_MAX_LENGTHS } from "@/lib/constants";
+
 interface Props {
   exercise: string;
   targetMuscles: string;
@@ -13,7 +15,8 @@ interface Props {
 function StepLabel({ step, title }: { step?: number; title: string }) {
   return (
     <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
-      {step !== undefined ? `Step ${step} — ` : ""}{title}
+      {step !== undefined ? `Step ${step} — ` : ""}
+      {title}
     </p>
   );
 }
@@ -23,11 +26,13 @@ function FieldInput({
   value,
   onChange,
   disabled,
+  maxLength,
 }: {
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
+  maxLength?: number;
 }) {
   return (
     <input
@@ -36,6 +41,7 @@ function FieldInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
+      maxLength={maxLength}
       className="w-full bg-transparent text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none disabled:opacity-50"
     />
   );
@@ -52,7 +58,6 @@ export default function WorkoutSelector({
 }: Props) {
   return (
     <div className="flex flex-col divide-y divide-zinc-800 rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-
       <div className="flex flex-col gap-1.5 px-4 py-3">
         <StepLabel step={2} title="What are you doing?" />
         <FieldInput
@@ -60,6 +65,7 @@ export default function WorkoutSelector({
           value={exercise}
           onChange={onExerciseChange}
           disabled={disabled}
+          maxLength={FIELD_MAX_LENGTHS.exercise}
         />
       </div>
 
@@ -70,6 +76,7 @@ export default function WorkoutSelector({
           value={targetMuscles}
           onChange={onMusclesChange}
           disabled={disabled}
+          maxLength={FIELD_MAX_LENGTHS.targetMuscles}
         />
       </div>
 
@@ -80,9 +87,9 @@ export default function WorkoutSelector({
           value={trainingGoal}
           onChange={onTrainingGoalChange}
           disabled={disabled}
+          maxLength={FIELD_MAX_LENGTHS.trainingGoal}
         />
       </div>
-
     </div>
   );
 }

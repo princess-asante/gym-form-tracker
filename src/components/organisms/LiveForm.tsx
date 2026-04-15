@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { LiveFeedbackSchema, type LiveFeedback } from "@/lib/schemas";
 import CameraPreview from "@/components/molecules/CameraPreview";
@@ -57,8 +58,18 @@ const LiveForm = () => {
       }
       isAnalysingRef.current = false;
     },
-    onError: () => {
+    onError: (err) => {
       isAnalysingRef.current = false;
+      let message: string;
+      try {
+        message = (JSON.parse(err.message) as { error: string }).error;
+      } catch {
+        message = err.message;
+      }
+      if (message.toLowerCase().includes("limit")) {
+        stopSession();
+        Swal.fire({ icon: "warning", title: "Limit reached", text: message });
+      }
     },
   });
 

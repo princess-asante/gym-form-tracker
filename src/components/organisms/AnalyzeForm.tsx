@@ -9,6 +9,21 @@ import FeedbackPanel from "@/components/organisms/FeedbackPanel";
 import Button from "@/components/atoms/Button";
 import WorkoutSelector from "@/components/molecules/WorkoutSelector";
 import { logger } from "@/lib/logger";
+import Swal from "sweetalert2";
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+function parseErrorMessage(err: Error): string {
+  try {
+    return (JSON.parse(err.message) as { error: string }).error;
+  } catch {
+    return err.message;
+  }
+}
+
+function showRateLimitAlert(message: string) {
+  Swal.fire({ icon: "warning", title: "Limit reached", text: message });
+}
 
 // ─── local atoms ─────────────────────────────────────────────────────────────
 
@@ -46,8 +61,11 @@ export default function AnalyzeForm() {
   } = useObject({
     api: "/api/analyze-photo",
     schema: FormFeedbackSchema,
-    onError: (err) =>
-      logger.error("photo analysis failed", { message: err.message }),
+    onError: (err) => {
+      logger.error("photo analysis failed", { message: err.message });
+      const message = parseErrorMessage(err);
+      if (message.toLowerCase().includes("limit")) showRateLimitAlert(message);
+    },
   });
 
   // ── video path ──────────────────────────────────────────────────────────
@@ -58,6 +76,8 @@ export default function AnalyzeForm() {
     onError: (err) => {
       setUploadPhase("idle");
       logger.error("video analysis failed", { message: err.message });
+      const message = parseErrorMessage(err);
+      if (message.toLowerCase().includes("limit")) showRateLimitAlert(message);
     },
     fetch: async (input, init) => {
       const f = fileRef.current;
