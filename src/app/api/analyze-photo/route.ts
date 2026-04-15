@@ -1,6 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { Output, streamText } from "ai";
-import sharp from "sharp";
 import { FormFeedbackSchema } from "@/lib/schemas";
 import { buildSystemPrompt } from "@/lib/prompts";
 import { errorResponse } from "@/lib/api";
@@ -56,7 +55,7 @@ export async function POST(request: Request) {
   // The SDK treats strings as URLs and tries to fetch them — including data:
   // URLs, which causes a DownloadError. Passing a Buffer tells the SDK this
   // is already binary data and bypasses the URL fetching path entirely.
-  const imageBuffer = await sharp(Buffer.from(base64Data, "base64")).toBuffer();
+  const imageBuffer = Buffer.from(base64Data, "base64");
 
   const result = streamText({
     model: anthropic("claude-sonnet-4-6"),

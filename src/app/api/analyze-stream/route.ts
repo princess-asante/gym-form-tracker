@@ -1,6 +1,5 @@
 import { google } from "@ai-sdk/google";
 import { Output, streamText } from "ai";
-import sharp from "sharp";
 import { LiveFeedbackSchema } from "@/lib/schemas";
 import { buildSystemPrompt } from "@/lib/prompts";
 import { logger } from "@/lib/logger";
@@ -51,7 +50,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unsupported image type" }, { status: 415 });
   }
 
-  const imageBuffer = await sharp(Buffer.from(base64Data, "base64")).toBuffer();
+  const imageBuffer = Buffer.from(base64Data, "base64");
   logger.info("[analyze-stream] dispatching frame", {
     mediaType,
     exercise: exercise ?? null,
