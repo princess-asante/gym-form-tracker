@@ -19,7 +19,6 @@ export const streamLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.tokenBucket(3, "5 s", 3),
   prefix: "ratelimit:stream",
-  analytics: true,
 });
 
 export const photoLimiter = new Ratelimit({
