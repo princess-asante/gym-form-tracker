@@ -3,8 +3,7 @@
 import { useRef, useState } from "react";
 import Script from "next/script";
 import Button from "@/components/atoms/Button";
-
-const VISIBILITY_THRESHOLD = 0.8;
+import { VISIBILITY_THRESHOLD, CONNECTIONS, KEY_LANDMARKS, calcAngle, INITIAL_ANGLES, type Angles } from "@/lib/pose";
 
 const MEDIAPIPE_SCRIPTS = [
   "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js",
@@ -12,50 +11,11 @@ const MEDIAPIPE_SCRIPTS = [
   "https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js",
 ];
 
-// Pure function — lives outside the component so React doesn't recreate it on every render.
-// a, b, c are MediaPipe landmark objects: { x, y, visibility } normalised 0–1.
-// b is the joint we're measuring (the middle point of the three).
-// Returns null if any landmark has low confidence — callers show "—" instead of a bad number.
-const calcAngle = (
-  a: { x: number; y: number; visibility: number },
-  b: { x: number; y: number; visibility: number },
-  c: { x: number; y: number; visibility: number },
-): number | null => {
-  // Bail early if any of the three points isn't reliably detected.
-  if (a.visibility < VISIBILITY_THRESHOLD || b.visibility < VISIBILITY_THRESHOLD || c.visibility < VISIBILITY_THRESHOLD) return null;
-
-  // atan2(dy, dx) gives the angle between the horizontal axis and the line
-  // drawn from b toward that point. We compute it for both bones meeting at b.
-  const angleToC = Math.atan2(c.y - b.y, c.x - b.x);
-  const angleToA = Math.atan2(a.y - b.y, a.x - b.x);
-
-  // Subtract: the shared horizontal reference cancels out,
-  // leaving only the angle between the two bones.
-  const radians = angleToC - angleToA;
-
-  // Convert radians → degrees.
-  let degrees = Math.abs((radians * 180) / Math.PI);
-
-  // The subtraction can produce values > 180 when the result wraps around.
-  // We always want the interior angle (0–180°), so we reflect it back.
-  if (degrees > 180) degrees = 360 - degrees;
-
-  return Math.round(degrees);
-};
-
 const LiveForm = () => {
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [fps, setFps] = useState(0);
-  const [angles, setAngles] = useState<{
-    lKnee: number | null; rKnee: number | null;
-    lHip:  number | null; rHip:  number | null;
-    lElbow: number | null; rElbow: number | null;
-  }>({
-    lKnee: null, rKnee: null,
-    lHip:  null, rHip:  null,
-    lElbow: null, rElbow: null,
-  });
+  const [angles, setAngles] = useState<Angles>(INITIAL_ANGLES);
 
   const loadedCount = useRef(0);
   const angleFrameCount = useRef(0);
@@ -65,38 +25,6 @@ const LiveForm = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const poseRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
-
-  // https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?authuser=2
-  const CONNECTIONS: [number, number][] = [
-    [11, 12],
-    [11, 13],
-    [13, 15],
-    [12, 14],
-    [14, 16],
-    // upper body
-    [11, 23],
-    [12, 24],
-    [23, 24],
-    // torso
-    [23, 25],
-    [24, 26],
-    [25, 27],
-    [26, 28],
-    // legs
-    [27, 29],
-    [28, 30],
-    [29, 31],
-    [30, 32],
-    // feet
-    [15, 17],
-    [15, 19],
-    [16, 18],
-    [16, 20],
-    // hands
-  ];
-
-  // Landmarks we want to highlight as larger dots (key joints for gym exercises)
-  const KEY_LANDMARKS = new Set([11, 12, 13, 14, 23, 24, 25, 26, 27, 28]);
 
   const onResults = (results: any) => {
     const canvas = canvasRef.current;
@@ -245,6 +173,15 @@ const LiveForm = () => {
       ? "Stop session"
       : "Start session";
 
+  const angleCards: { label: string; value: number | null }[] = [
+    { label: "L Knee",  value: angles.lKnee },
+    { label: "R Knee",  value: angles.rKnee },
+    { label: "L Hip",   value: angles.lHip },
+    { label: "R Hip",   value: angles.rHip },
+    { label: "L Elbow", value: angles.lElbow },
+    { label: "R Elbow", value: angles.rElbow },
+  ];
+
   return (
     <>
       {MEDIAPIPE_SCRIPTS.map((src) => (
@@ -316,16 +253,7 @@ const LiveForm = () => {
               Joint angles
             </p>
             <div className="grid grid-cols-3 gap-2">
-              {(
-                [
-                  { label: "L Knee",  value: angles.lKnee },
-                  { label: "R Knee",  value: angles.rKnee },
-                  { label: "L Hip",   value: angles.lHip },
-                  { label: "R Hip",   value: angles.rHip },
-                  { label: "L Elbow", value: angles.lElbow },
-                  { label: "R Elbow", value: angles.rElbow },
-                ] as { label: string; value: number | null }[]
-              ).map(({ label, value }) => (
+              {angleCards.map(({ label, value }) => (
                 <div
                   key={label}
                   className="flex flex-col items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 py-3"
