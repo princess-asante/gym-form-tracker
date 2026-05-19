@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Script from "next/script";
 import Button from "@/components/atoms/Button";
 import { VISIBILITY_THRESHOLD, CONNECTIONS, KEY_LANDMARKS, calcAngle, INITIAL_ANGLES, type Angles } from "@/lib/pose";
+import AngleRecorder from "@/components/molecules/AngleRecorder";
 
 const MEDIAPIPE_SCRIPTS = [
   "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js",
@@ -245,6 +246,8 @@ const LiveForm = () => {
         >
           {buttonLabel}
         </Button>
+
+        <AngleRecorder angles={angles} isSessionActive={isActive} />
 
         {/* Angle readouts — only visible during an active session */}
         {isActive && (

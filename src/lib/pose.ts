@@ -1,28 +1,49 @@
 export type Angles = {
-  lKnee: number | null; rKnee: number | null;
-  lHip:  number | null; rHip:  number | null;
-  lElbow: number | null; rElbow: number | null;
+  lKnee: number | null;
+  rKnee: number | null;
+  lHip: number | null;
+  rHip: number | null;
+  lElbow: number | null;
+  rElbow: number | null;
 };
 
 export const INITIAL_ANGLES: Angles = {
-  lKnee: null, rKnee: null,
-  lHip:  null, rHip:  null,
-  lElbow: null, rElbow: null,
+  lKnee: null,
+  rKnee: null,
+  lHip: null,
+  rHip: null,
+  lElbow: null,
+  rElbow: null,
 };
 
 // Visibility confidence threshold — landmarks below this are skipped for
 // both drawing and angle calculation to avoid acting on unreliable data.
-export const VISIBILITY_THRESHOLD = 0.8;
+export const VISIBILITY_THRESHOLD = 0.99;
 
 // Pairs of landmark indices that form the skeleton lines.
 // Each pair [a, b] draws a line between landmark a and landmark b.
 // Full landmark map: https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker
 export const CONNECTIONS: [number, number][] = [
-  [11, 12], [11, 13], [13, 15], [12, 14], [14, 16], // upper body
-  [11, 23], [12, 24], [23, 24],                      // torso
-  [23, 25], [24, 26], [25, 27], [26, 28],            // legs
-  [27, 29], [28, 30], [29, 31], [30, 32],            // feet
-  [15, 17], [15, 19], [16, 18], [16, 20],            // hands
+  [11, 12],
+  [11, 13],
+  [13, 15],
+  [12, 14],
+  [14, 16], // upper body
+  [11, 23],
+  [12, 24],
+  [23, 24], // torso
+  [23, 25],
+  [24, 26],
+  [25, 27],
+  [26, 28], // legs
+  [27, 29],
+  [28, 30],
+  [29, 31],
+  [30, 32], // feet
+  [15, 17],
+  [15, 19],
+  [16, 18],
+  [16, 20], // hands
 ];
 
 // Landmarks rendered as larger, highlighted dots — the key joints for gym exercise analysis.
@@ -35,9 +56,15 @@ export const calcAngle = (
   a: { x: number; y: number; visibility: number },
   b: { x: number; y: number; visibility: number },
   c: { x: number; y: number; visibility: number },
+  threshold = VISIBILITY_THRESHOLD,
 ): number | null => {
   // Bail early if any of the three points isn't reliably detected.
-  if (a.visibility < VISIBILITY_THRESHOLD || b.visibility < VISIBILITY_THRESHOLD || c.visibility < VISIBILITY_THRESHOLD) return null;
+  if (
+    a.visibility < threshold ||
+    b.visibility < threshold ||
+    c.visibility < threshold
+  )
+    return null;
 
   // atan2(dy, dx) gives the angle between the horizontal axis and the line
   // drawn from b toward that point. We compute it for both bones meeting at b.
@@ -57,3 +84,12 @@ export const calcAngle = (
 
   return Math.round(degrees);
 };
+
+/*
+
+- todo: remove the close functionality on the popup for the feedback 
+- todo: delete the video if the file is too large 
+- todo: adjust the prompt, it's still not recognising videos
+
+
+*/

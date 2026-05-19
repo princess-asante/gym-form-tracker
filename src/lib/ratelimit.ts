@@ -41,3 +41,10 @@ export const blobLimiter = new Ratelimit({
   prefix: "ratelimit:blob",
   analytics: true,
 });
+
+export const anglesLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(20, "1 h"),
+  prefix: "ratelimit:angles",
+  analytics: true,
+});
